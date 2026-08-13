@@ -1,0 +1,915 @@
+{
+  "by_setting": {
+    "full_graph:canonical_only:depth_0": {
+      "branching_state_count": {
+        "count": 16,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "p90": 0.0,
+        "p95": 0.0
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 16,
+      "dag_edge_count": {
+        "count": 16,
+        "maximum": 1363.0,
+        "mean": 254.0,
+        "median": 45.5,
+        "p90": 912.0,
+        "p95": 1093.0
+      },
+      "dag_node_count": {
+        "count": 16,
+        "maximum": 502.0,
+        "mean": 121.875,
+        "median": 37.5,
+        "p90": 446.0,
+        "p95": 483.25
+      },
+      "different_tied_distributions": 0,
+      "estimated_memory_bytes": {
+        "count": 16,
+        "maximum": 460080.0,
+        "mean": 107616.5625,
+        "median": 27002.0,
+        "p90": 412721.0,
+        "p95": 457957.5
+      },
+      "export_runtime_seconds": {
+        "count": 16,
+        "maximum": 0.022338499999023043,
+        "mean": 0.005002699999749893,
+        "median": 0.001093999992008321,
+        "p90": 0.01969690000260016,
+        "p95": 0.022203500007890398
+      },
+      "form": "full_graph",
+      "implied_policy_count": {
+        "count": 16,
+        "maximum": 1.0,
+        "mean": 1.0,
+        "median": 1.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "maximum_actions_at_state": {
+        "count": 16,
+        "maximum": 1.0,
+        "mean": 0.75,
+        "median": 1.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "maximum_sampled_pairwise_tv": 0.0,
+      "pickle_size_bytes": {
+        "count": 16,
+        "maximum": 244076.0,
+        "mean": 59566.6875,
+        "median": 16632.0,
+        "p90": 223082.5,
+        "p95": 237542.75
+      },
+      "records": 16,
+      "retain_mode": "canonical_only",
+      "retained_action_count": {
+        "count": 16,
+        "maximum": 360.0,
+        "mean": 73.6875,
+        "median": 13.5,
+        "p90": 285.0,
+        "p95": 312.75
+      },
+      "split_depth": 0,
+      "status_histogram": {
+        "completed": 16
+      }
+    },
+    "full_graph:exact_ties:depth_1": {
+      "branching_state_count": {
+        "count": 16,
+        "maximum": 1.0,
+        "mean": 0.4375,
+        "median": 0.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 16,
+      "dag_edge_count": {
+        "count": 16,
+        "maximum": 1363.0,
+        "mean": 305.0,
+        "median": 85.0,
+        "p90": 1166.5,
+        "p95": 1338.25
+      },
+      "dag_node_count": {
+        "count": 16,
+        "maximum": 546.0,
+        "mean": 134.9375,
+        "median": 50.5,
+        "p90": 489.5,
+        "p95": 513.0
+      },
+      "different_tied_distributions": 0,
+      "estimated_memory_bytes": {
+        "count": 16,
+        "maximum": 524696.0,
+        "mean": 123374.3125,
+        "median": 41882.0,
+        "p90": 458665.0,
+        "p95": 476234.0
+      },
+      "export_runtime_seconds": {
+        "count": 16,
+        "maximum": 0.017898100006277673,
+        "mean": 0.0033300124978268286,
+        "median": 0.001611449995834846,
+        "p90": 0.009965499993995763,
+        "p95": 0.012100224994355813
+      },
+      "form": "full_graph",
+      "implied_policy_count": {
+        "count": 16,
+        "maximum": 4.0,
+        "mean": 1.625,
+        "median": 1.0,
+        "p90": 2.5,
+        "p95": 3.25
+      },
+      "maximum_actions_at_state": {
+        "count": 16,
+        "maximum": 4.0,
+        "mean": 1.375,
+        "median": 1.0,
+        "p90": 2.5,
+        "p95": 3.25
+      },
+      "maximum_sampled_pairwise_tv": 6.158268339717665e-17,
+      "pickle_size_bytes": {
+        "count": 16,
+        "maximum": 298351.0,
+        "mean": 68127.6875,
+        "median": 23745.5,
+        "p90": 239717.5,
+        "p95": 257642.5
+      },
+      "records": 16,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 16,
+        "maximum": 407.0,
+        "mean": 87.375,
+        "median": 27.5,
+        "p90": 328.5,
+        "p95": 371.75
+      },
+      "split_depth": 1,
+      "status_histogram": {
+        "completed": 16
+      }
+    },
+    "full_graph:exact_ties:depth_2": {
+      "branching_state_count": {
+        "count": 16,
+        "maximum": 18.0,
+        "mean": 2.75,
+        "median": 0.5,
+        "p90": 8.0,
+        "p95": 12.0
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 16,
+      "dag_edge_count": {
+        "count": 16,
+        "maximum": 2254.0,
+        "mean": 383.3125,
+        "median": 88.0,
+        "p90": 1183.0,
+        "p95": 1585.75
+      },
+      "dag_node_count": {
+        "count": 16,
+        "maximum": 799.0,
+        "mean": 154.6875,
+        "median": 50.5,
+        "p90": 489.5,
+        "p95": 576.25
+      },
+      "different_tied_distributions": 3,
+      "estimated_memory_bytes": {
+        "count": 16,
+        "maximum": 821301.0,
+        "mean": 147436.75,
+        "median": 42522.0,
+        "p90": 458665.0,
+        "p95": 550385.25
+      },
+      "export_runtime_seconds": {
+        "count": 16,
+        "maximum": 0.03910819999873638,
+        "mean": 0.0045896249985162285,
+        "median": 0.0009770500037120655,
+        "p90": 0.008929949995945208,
+        "p95": 0.016835374994116137
+      },
+      "form": "full_graph",
+      "implied_policy_count": {
+        "count": 15,
+        "maximum": 3456.0,
+        "mean": 237.2,
+        "median": 1.0,
+        "p90": 44.79999999999998,
+        "p95": 1081.5999999999963
+      },
+      "maximum_actions_at_state": {
+        "count": 16,
+        "maximum": 4.0,
+        "mean": 1.4375,
+        "median": 1.5,
+        "p90": 2.5,
+        "p95": 3.25
+      },
+      "maximum_sampled_pairwise_tv": 0.18507376087912092,
+      "pickle_size_bytes": {
+        "count": 16,
+        "maximum": 462842.0,
+        "mean": 81339.4375,
+        "median": 23994.5,
+        "p90": 239720.0,
+        "p95": 298766.0
+      },
+      "records": 16,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 16,
+        "maximum": 666.0,
+        "mean": 108.5,
+        "median": 28.5,
+        "p90": 328.5,
+        "p95": 436.5
+      },
+      "split_depth": 2,
+      "status_histogram": {
+        "completed": 16
+      }
+    },
+    "full_graph:exact_ties:depth_3": {
+      "branching_state_count": {
+        "count": 16,
+        "maximum": 129.0,
+        "mean": 12.125,
+        "median": 1.0,
+        "p90": 18.0,
+        "p95": 48.75
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 16,
+      "dag_edge_count": {
+        "count": 16,
+        "maximum": 3187.0,
+        "mean": 460.8125,
+        "median": 90.5,
+        "p90": 1259.5,
+        "p95": 1852.0
+      },
+      "dag_node_count": {
+        "count": 16,
+        "maximum": 890.0,
+        "mean": 164.25,
+        "median": 50.5,
+        "p90": 511.5,
+        "p95": 626.0
+      },
+      "different_tied_distributions": 6,
+      "estimated_memory_bytes": {
+        "count": 16,
+        "maximum": 1029645.0,
+        "mean": 166143.5,
+        "median": 43642.0,
+        "p90": 483673.0,
+        "p95": 632483.25
+      },
+      "export_runtime_seconds": {
+        "count": 16,
+        "maximum": 0.03864620000240393,
+        "mean": 0.004716043748885568,
+        "median": 0.001051200000802055,
+        "p90": 0.010267899997415952,
+        "p95": 0.018261425000673626
+      },
+      "form": "full_graph",
+      "implied_policy_count": {
+        "count": 14,
+        "maximum": 16384.0,
+        "mean": 1208.357142857143,
+        "median": 2.0,
+        "p90": 217.60000000000014,
+        "p95": 5900.799999999994
+      },
+      "maximum_actions_at_state": {
+        "count": 16,
+        "maximum": 4.0,
+        "mean": 1.625,
+        "median": 2.0,
+        "p90": 2.5,
+        "p95": 3.25
+      },
+      "maximum_sampled_pairwise_tv": 0.09507600000000002,
+      "pickle_size_bytes": {
+        "count": 16,
+        "maximum": 571543.0,
+        "mean": 90974.1875,
+        "median": 24253.5,
+        "p90": 252586.5,
+        "p95": 341351.5
+      },
+      "records": 16,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 16,
+        "maximum": 884.0,
+        "mean": 127.875,
+        "median": 31.0,
+        "p90": 349.5,
+        "p95": 518.0
+      },
+      "split_depth": 3,
+      "status_histogram": {
+        "completed": 16
+      }
+    },
+    "full_graph:exact_ties:unrestricted": {
+      "branching_state_count": {
+        "count": 16,
+        "maximum": 370.0,
+        "mean": 42.0625,
+        "median": 6.5,
+        "p90": 95.5,
+        "p95": 187.0
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 16,
+      "dag_edge_count": {
+        "count": 16,
+        "maximum": 3938.0,
+        "mean": 539.875,
+        "median": 92.5,
+        "p90": 1469.0,
+        "p95": 2147.75
+      },
+      "dag_node_count": {
+        "count": 16,
+        "maximum": 940.0,
+        "mean": 171.25,
+        "median": 50.5,
+        "p90": 538.0,
+        "p95": 664.75
+      },
+      "different_tied_distributions": 5,
+      "estimated_memory_bytes": {
+        "count": 16,
+        "maximum": 1231960.0,
+        "mean": 190222.3125,
+        "median": 44538.0,
+        "p90": 557117.0,
+        "p95": 754489.0
+      },
+      "export_runtime_seconds": {
+        "count": 16,
+        "maximum": 0.025085600005695596,
+        "mean": 0.00398124999992433,
+        "median": 0.000964750004641246,
+        "p90": 0.011966049998591188,
+        "p95": 0.015514325008552987
+      },
+      "form": "full_graph",
+      "implied_policy_count": {
+        "count": 10,
+        "maximum": 256.0,
+        "mean": 55.3,
+        "median": 1.5,
+        "p90": 256.0,
+        "p95": 256.0
+      },
+      "maximum_actions_at_state": {
+        "count": 16,
+        "maximum": 4.0,
+        "mean": 1.625,
+        "median": 2.0,
+        "p90": 2.5,
+        "p95": 3.25
+      },
+      "maximum_sampled_pairwise_tv": 0.09507600000000002,
+      "pickle_size_bytes": {
+        "count": 16,
+        "maximum": 665033.0,
+        "mean": 101191.8125,
+        "median": 24509.5,
+        "p90": 281139.5,
+        "p95": 392783.75
+      },
+      "records": 16,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 16,
+        "maximum": 1186.0,
+        "mean": 165.125,
+        "median": 33.0,
+        "p90": 464.5,
+        "p95": 704.5
+      },
+      "split_depth": null,
+      "status_histogram": {
+        "completed": 16
+      }
+    },
+    "macro_region:canonical_only:depth_0": {
+      "branching_state_count": {
+        "count": 8,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "p90": 0.0,
+        "p95": 0.0
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 8,
+      "dag_edge_count": {
+        "count": 8,
+        "maximum": 1363.0,
+        "mean": 472.5,
+        "median": 233.0,
+        "p90": 1111.0,
+        "p95": 1236.9999999999998
+      },
+      "dag_node_count": {
+        "count": 8,
+        "maximum": 502.0,
+        "mean": 217.0,
+        "median": 121.5,
+        "p90": 484.5,
+        "p95": 493.25
+      },
+      "different_tied_distributions": 0,
+      "estimated_memory_bytes": {
+        "count": 8,
+        "maximum": 460080.0,
+        "mean": 196719.5,
+        "median": 106748.0,
+        "p90": 458099.0,
+        "p95": 459089.5
+      },
+      "export_runtime_seconds": {
+        "count": 8,
+        "maximum": 0.022338499999023043,
+        "mean": 0.009300949999669683,
+        "median": 0.004640900006052107,
+        "p90": 0.02221250000729924,
+        "p95": 0.02227550000316114
+      },
+      "form": "macro_region",
+      "implied_policy_count": {
+        "count": 8,
+        "maximum": 1.0,
+        "mean": 1.0,
+        "median": 1.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "maximum_actions_at_state": {
+        "count": 8,
+        "maximum": 1.0,
+        "mean": 1.0,
+        "median": 1.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "maximum_sampled_pairwise_tv": 0.0,
+      "pickle_size_bytes": {
+        "count": 8,
+        "maximum": 244076.0,
+        "mean": 106972.0,
+        "median": 58260.5,
+        "p90": 237978.3,
+        "p95": 241027.15000000002
+      },
+      "records": 8,
+      "retain_mode": "canonical_only",
+      "retained_action_count": {
+        "count": 8,
+        "maximum": 360.0,
+        "mean": 140.875,
+        "median": 77.0,
+        "p90": 315.9,
+        "p95": 337.94999999999993
+      },
+      "split_depth": 0,
+      "status_histogram": {
+        "completed": 8
+      }
+    },
+    "macro_region:exact_ties:depth_1": {
+      "branching_state_count": {
+        "count": 8,
+        "maximum": 1.0,
+        "mean": 0.625,
+        "median": 1.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 8,
+      "dag_edge_count": {
+        "count": 8,
+        "maximum": 1363.0,
+        "mean": 561.5,
+        "median": 298.0,
+        "p90": 1339.9,
+        "p95": 1351.4499999999998
+      },
+      "dag_node_count": {
+        "count": 8,
+        "maximum": 546.0,
+        "mean": 239.75,
+        "median": 135.5,
+        "p90": 515.2,
+        "p95": 530.5999999999999
+      },
+      "different_tied_distributions": 0,
+      "estimated_memory_bytes": {
+        "count": 8,
+        "maximum": 524696.0,
+        "mean": 224113.5,
+        "median": 124691.0,
+        "p90": 479464.79999999993,
+        "p95": 502080.39999999997
+      },
+      "export_runtime_seconds": {
+        "count": 8,
+        "maximum": 0.017898100006277673,
+        "mean": 0.005988562499624095,
+        "median": 0.0032264500041492283,
+        "p90": 0.012486749995150603,
+        "p95": 0.015192425000714134
+      },
+      "form": "macro_region",
+      "implied_policy_count": {
+        "count": 8,
+        "maximum": 4.0,
+        "mean": 2.0,
+        "median": 2.0,
+        "p90": 3.3,
+        "p95": 3.6499999999999995
+      },
+      "maximum_actions_at_state": {
+        "count": 8,
+        "maximum": 4.0,
+        "mean": 2.0,
+        "median": 2.0,
+        "p90": 3.3,
+        "p95": 3.6499999999999995
+      },
+      "maximum_sampled_pairwise_tv": 6.158268339717665e-17,
+      "pickle_size_bytes": {
+        "count": 8,
+        "maximum": 298351.0,
+        "mean": 122080.0,
+        "median": 67651.5,
+        "p90": 260356.39999999997,
+        "p95": 279353.69999999995
+      },
+      "records": 8,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 8,
+        "maximum": 407.0,
+        "mean": 164.625,
+        "median": 92.0,
+        "p90": 374.09999999999997,
+        "p95": 390.54999999999995
+      },
+      "split_depth": 1,
+      "status_histogram": {
+        "completed": 8
+      }
+    },
+    "macro_region:exact_ties:depth_2": {
+      "branching_state_count": {
+        "count": 8,
+        "maximum": 18.0,
+        "mean": 4.5,
+        "median": 1.0,
+        "p90": 12.399999999999999,
+        "p95": 15.199999999999996
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 8,
+      "dag_edge_count": {
+        "count": 8,
+        "maximum": 2254.0,
+        "mean": 696.125,
+        "median": 328.5,
+        "p90": 1630.2999999999997,
+        "p95": 1942.1499999999996
+      },
+      "dag_node_count": {
+        "count": 8,
+        "maximum": 799.0,
+        "mean": 276.0,
+        "median": 141.0,
+        "p90": 591.0999999999999,
+        "p95": 695.0499999999998
+      },
+      "different_tied_distributions": 2,
+      "estimated_memory_bytes": {
+        "count": 8,
+        "maximum": 821301.0,
+        "mean": 267267.375,
+        "median": 134037.0,
+        "p90": 568446.2999999999,
+        "p95": 694873.6499999998
+      },
+      "export_runtime_seconds": {
+        "count": 8,
+        "maximum": 0.03910819999873638,
+        "mean": 0.008438062497589272,
+        "median": 0.003724900001543574,
+        "p90": 0.018320229994424148,
+        "p95": 0.02871421499658025
+      },
+      "form": "macro_region",
+      "implied_policy_count": {
+        "count": 7,
+        "maximum": 3456.0,
+        "mean": 503.85714285714283,
+        "median": 2.0,
+        "p90": 1420.800000000001,
+        "p95": 2438.399999999998
+      },
+      "maximum_actions_at_state": {
+        "count": 8,
+        "maximum": 4.0,
+        "mean": 2.0,
+        "median": 2.0,
+        "p90": 3.3,
+        "p95": 3.6499999999999995
+      },
+      "maximum_sampled_pairwise_tv": 0.18507376087912092,
+      "pickle_size_bytes": {
+        "count": 8,
+        "maximum": 462842.0,
+        "mean": 145892.0,
+        "median": 72882.5,
+        "p90": 309704.39999999997,
+        "p95": 386273.1999999999
+      },
+      "records": 8,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 8,
+        "maximum": 666.0,
+        "mean": 203.0,
+        "median": 104.5,
+        "p90": 451.79999999999995,
+        "p95": 558.8999999999999
+      },
+      "split_depth": 2,
+      "status_histogram": {
+        "completed": 8
+      }
+    },
+    "macro_region:exact_ties:depth_3": {
+      "branching_state_count": {
+        "count": 8,
+        "maximum": 129.0,
+        "mean": 22.25,
+        "median": 5.0,
+        "p90": 54.09999999999998,
+        "p95": 91.54999999999995
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 8,
+      "dag_edge_count": {
+        "count": 8,
+        "maximum": 3187.0,
+        "mean": 844.5,
+        "median": 373.5,
+        "p90": 1940.9999999999995,
+        "p95": 2563.999999999999
+      },
+      "dag_node_count": {
+        "count": 8,
+        "maximum": 890.0,
+        "mean": 294.5,
+        "median": 146.0,
+        "p90": 643.5999999999999,
+        "p95": 766.7999999999998
+      },
+      "different_tied_distributions": 5,
+      "estimated_memory_bytes": {
+        "count": 8,
+        "maximum": 1029645.0,
+        "mean": 303185.375,
+        "median": 146192.0,
+        "p90": 658960.7,
+        "p95": 844302.8499999996
+      },
+      "export_runtime_seconds": {
+        "count": 8,
+        "maximum": 0.03864620000240393,
+        "mean": 0.008728187496672035,
+        "median": 0.0035574999928940088,
+        "p90": 0.019620410000788974,
+        "p95": 0.02913330500159644
+      },
+      "form": "macro_region",
+      "implied_policy_count": {
+        "count": 6,
+        "maximum": 16384.0,
+        "mean": 2754.3333333333335,
+        "median": 5.0,
+        "p90": 8256.0,
+        "p95": 12320.0
+      },
+      "maximum_actions_at_state": {
+        "count": 8,
+        "maximum": 4.0,
+        "mean": 2.375,
+        "median": 2.0,
+        "p90": 3.3,
+        "p95": 3.6499999999999995
+      },
+      "maximum_sampled_pairwise_tv": 0.09507600000000002,
+      "pickle_size_bytes": {
+        "count": 8,
+        "maximum": 571543.0,
+        "mean": 164454.0,
+        "median": 78812.0,
+        "p90": 356697.6,
+        "p95": 464120.2999999999
+      },
+      "records": 8,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 8,
+        "maximum": 884.0,
+        "mean": 240.125,
+        "median": 120.0,
+        "p90": 542.3999999999999,
+        "p95": 713.1999999999998
+      },
+      "split_depth": 3,
+      "status_histogram": {
+        "completed": 8
+      }
+    },
+    "macro_region:exact_ties:unrestricted": {
+      "branching_state_count": {
+        "count": 8,
+        "maximum": 370.0,
+        "mean": 82.0,
+        "median": 34.5,
+        "p90": 199.19999999999993,
+        "p95": 284.59999999999985
+      },
+      "canonical_distribution_changed": 0,
+      "canonical_value_changed": 0,
+      "completed": 8,
+      "dag_edge_count": {
+        "count": 8,
+        "maximum": 3938.0,
+        "mean": 1001.875,
+        "median": 402.0,
+        "p90": 2267.0999999999995,
+        "p95": 3102.549999999999
+      },
+      "dag_node_count": {
+        "count": 8,
+        "maximum": 940.0,
+        "mean": 308.5,
+        "median": 149.5,
+        "p90": 683.0999999999999,
+        "p95": 811.5499999999998
+      },
+      "different_tied_distributions": 4,
+      "estimated_memory_bytes": {
+        "count": 8,
+        "maximum": 1231960.0,
+        "mean": 351227.0,
+        "median": 157711.0,
+        "p90": 786320.3999999999,
+        "p95": 1009140.1999999996
+      },
+      "export_runtime_seconds": {
+        "count": 8,
+        "maximum": 0.025085600005695596,
+        "mean": 0.007346787499045604,
+        "median": 0.0032302499894285575,
+        "p90": 0.01615241000836249,
+        "p95": 0.02061900500702904
+      },
+      "form": "macro_region",
+      "implied_policy_count": {
+        "count": 2,
+        "maximum": 32.0,
+        "mean": 17.0,
+        "median": 17.0,
+        "p90": 29.0,
+        "p95": 30.5
+      },
+      "maximum_actions_at_state": {
+        "count": 8,
+        "maximum": 4.0,
+        "mean": 2.375,
+        "median": 2.0,
+        "p90": 3.3,
+        "p95": 3.6499999999999995
+      },
+      "maximum_sampled_pairwise_tv": 0.09507600000000002,
+      "pickle_size_bytes": {
+        "count": 8,
+        "maximum": 665033.0,
+        "mean": 184832.5,
+        "median": 83020.5,
+        "p90": 410933.69999999995,
+        "p95": 537983.3499999999
+      },
+      "records": 8,
+      "retain_mode": "exact_ties",
+      "retained_action_count": {
+        "count": 8,
+        "maximum": 1186.0,
+        "mean": 314.5,
+        "median": 140.0,
+        "p90": 736.5999999999999,
+        "p95": 961.2999999999997
+      },
+      "split_depth": null,
+      "status_histogram": {
+        "completed": 8
+      }
+    }
+  },
+  "canonical_invariance": {
+    "distribution_changed_count": 0,
+    "maximum_canonical_distribution_tv": 6.674619624363887e-17,
+    "value_changed_count": 0
+  },
+  "completed_depth_record_count": 120,
+  "depth_record_count": 120,
+  "format_version": "exact_policy_dag_branching_validation_v1",
+  "generated_at": "2026-07-18T14:30:37.089668+00:00",
+  "macro_region": {
+    "completed": 8,
+    "full_vs_macro_tv": {
+      "count": 8,
+      "maximum": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "p90": 0.0,
+      "p95": 0.0
+    },
+    "identical_to_full_graph": 8,
+    "macro_outperformed_independent": 8,
+    "macro_vs_independent_tv": {
+      "count": 8,
+      "maximum": 1.0,
+      "mean": 0.9988969220638455,
+      "median": 1.0,
+      "p90": 1.0,
+      "p95": 1.0
+    },
+    "records": 8
+  },
+  "production_routing_changed": false,
+  "schema_version": "exact_policy_dag_branching_validation_schema_1",
+  "severe_sequence_findings": {
+    "cross_partition_followup": 8,
+    "outcome_dependent_front_switch": 6,
+    "outcome_dependent_stop": 8,
+    "sequence_opening": 8,
+    "unrestricted_records": 8
+  },
+  "stage_a_regenerated": false,
+  "stage_b_retrained": false,
+  "stage_e_started": false,
+  "status_histogram": {
+    "completed": 120
+  },
+  "tie_distribution_findings": {
+    "maximum_sampled_pairwise_tv": 0.18507376087912092,
+    "records_with_materially_different_tied_distributions": 14
+  },
+  "unique_case_count": 16
+}

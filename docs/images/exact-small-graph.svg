@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" role="img" aria-labelledby="title description">
+  <title id="title">Exact three-node combat graph example</title>
+  <desc id="description">One attacker node with four troops can attack either of two defender nodes with one troop. Both opening attacks are exactly tied. The solver returns four terminal states.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#344054"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#101828" flood-opacity="0.13"/>
+    </filter>
+  </defs>
+  <rect width="960" height="430" rx="20" fill="#f8fafc"/>
+  <text x="48" y="55" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#101828">Exact small-graph strategy example</text>
+  <text x="48" y="84" font-family="Arial, sans-serif" font-size="15" fill="#475467">Initial state: one attacker stack, two legal attacks, no precomputed library</text>
+
+  <path d="M331 214 C405 152 486 139 566 151" fill="none" stroke="#344054" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M331 239 C405 298 486 312 566 296" fill="none" stroke="#344054" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="425" y="147" font-family="Arial, sans-serif" font-size="14" fill="#344054">attack (0, 1)</text>
+  <text x="425" y="325" font-family="Arial, sans-serif" font-size="14" fill="#344054">attack (0, 2)</text>
+
+  <g filter="url(#shadow)">
+    <circle cx="275" cy="226" r="76" fill="#dbeafe" stroke="#2563eb" stroke-width="4"/>
+    <text x="275" y="209" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#1e3a8a">Attacker A0</text>
+    <text x="275" y="244" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1d4ed8">4 troops</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <circle cx="645" cy="145" r="65" fill="#fee2e2" stroke="#dc2626" stroke-width="4"/>
+    <text x="645" y="134" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#7f1d1d">Defender D1</text>
+    <text x="645" y="164" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#b91c1c">1 troop</text>
+  </g>
+  <g filter="url(#shadow)">
+    <circle cx="645" cy="305" r="65" fill="#fee2e2" stroke="#dc2626" stroke-width="4"/>
+    <text x="645" y="294" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#7f1d1d">Defender D2</text>
+    <text x="645" y="324" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#b91c1c">1 troop</text>
+  </g>
+
+  <rect x="755" y="126" width="160" height="202" rx="14" fill="#ffffff" stroke="#d0d5dd"/>
+  <text x="775" y="158" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#101828">Exact output</text>
+  <text x="775" y="188" font-family="Arial, sans-serif" font-size="14" fill="#475467">15 states evaluated</text>
+  <text x="775" y="214" font-family="Arial, sans-serif" font-size="14" fill="#475467">4 terminal states</text>
+  <text x="775" y="240" font-family="Arial, sans-serif" font-size="14" fill="#475467">mass = 1.000000</text>
+  <text x="775" y="266" font-family="Arial, sans-serif" font-size="14" fill="#475467">2 optimal openings</text>
+  <line x1="775" y1="283" x2="895" y2="283" stroke="#e4e7ec"/>
+  <text x="775" y="308" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#6941c6">Tie-aware policy DAG</text>
+
+  <text x="48" y="398" font-family="Arial, sans-serif" font-size="14" fill="#667085">Both arrows are equal under the local lexicographic objective; their labelled successor distributions remain distinct.</text>
+</svg>

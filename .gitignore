@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# Generated scientific artifacts
+*.pkl
+*.pickle
+*.joblib
+small_graph_libraries*/
+datasets/
+models/
+generated_validation/
+validation/output/
+
+# Local tooling and temporary files
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db

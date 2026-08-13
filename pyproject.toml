@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "risk-strategy-optimization"
+version = "0.1.0"
+description = "Exact stochastic strategy optimization on small combat graphs"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26,<3",
+    "pandas>=2.1,<3",
+]
+
+[tool.setuptools.packages.find]
+include = ["risk_strategy*"]
