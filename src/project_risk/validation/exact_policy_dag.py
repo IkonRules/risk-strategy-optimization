@@ -16,7 +16,7 @@ import pickle
 import time
 from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional, Sequence, Tuple
 
-from .exact_finite_solver import CompactExactTopologySolver, ExactSolverLimitReached
+from project_risk.mathematical.small_graph_model.exact_finite_solver import CompactExactTopologySolver, ExactSolverLimitReached
 
 
 ActionSignature = Any

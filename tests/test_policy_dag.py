@@ -1,8 +1,11 @@
 import unittest
 
-from risk_strategy.demo import build_exact_example_solver
-from risk_strategy.distribution_comparison_metrics import total_variation_distance
-from risk_strategy.exact_policy_dag import export_exact_policy_dag, materialize_policy_variant
+from examples.run_exact_example import build_exact_example_solver
+from project_risk.validation.distribution_comparison_metrics import total_variation_distance
+from project_risk.validation.exact_policy_dag import (
+    export_exact_policy_dag,
+    materialize_policy_variant,
+)
 
 
 class PolicyDagTests(unittest.TestCase):

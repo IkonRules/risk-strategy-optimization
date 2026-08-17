@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from risk_strategy.markov_matrix_probabilities import battle_summary
+from project_risk.mathematical.small_graph_model.markov_matrix_probabilities import battle_summary
 
 
 class CombatKernelTests(unittest.TestCase):

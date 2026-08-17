@@ -7,7 +7,7 @@ import pickle
 from typing import Sequence, Dict, Tuple, List, Any, Optional, Iterable
 from functools import lru_cache
 
-from .markov_matrix_probabilities import battle_summary
+from project_risk.mathematical.small_graph_model.markov_matrix_probabilities import battle_summary
 from pathlib import Path
 from collections import Counter
 import uuid
@@ -3591,6 +3591,7 @@ def truncate_v2_row_payload(
         out["cdf"] = build_cdf_from_p(out["p"])
 
     return out
+
 
 
 

@@ -7,11 +7,15 @@ import sys
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-if str(REPOSITORY_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPOSITORY_ROOT))
+SOURCE_ROOT = REPOSITORY_ROOT / "src"
+for import_root in (SOURCE_ROOT, REPOSITORY_ROOT):
+    if str(import_root) not in sys.path:
+        sys.path.insert(0, str(import_root))
 
-from risk_strategy.demo import solve_exact_example  # noqa: E402
-from risk_strategy.markov_matrix_probabilities import battle_summary  # noqa: E402
+from examples.run_exact_example import solve_exact_example  # noqa: E402
+from project_risk.mathematical.small_graph_model.markov_matrix_probabilities import (  # noqa: E402
+    battle_summary,
+)
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 import unittest
 
-from risk_strategy.demo import build_exact_example_solver, solve_exact_example
+from examples.run_exact_example import build_exact_example_solver, solve_exact_example
 
 
 class ExactSolverTests(unittest.TestCase):

@@ -17,6 +17,18 @@ build/
 small_graph_libraries*/
 datasets/
 models/
+checkpoints/
+logs/
+.test_deps/
+.package_test/
+.ipynb_checkpoints/
+
+# Common generated research output trees
+transition_distribution_data*/
+transition_target_sampling_calibration*/
+pilot_results*/
+regional_compounding_validation_v*/
+exact_policy_dag_*/
 generated_validation/
 validation/output/
 

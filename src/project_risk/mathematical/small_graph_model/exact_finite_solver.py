@@ -35,8 +35,8 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tupl
 import numpy as np
 import pandas as pd
 
-from .markov_matrix_probabilities import battle_summary
-from .small_graph_outcome_probabilities import (
+from project_risk.mathematical.small_graph_model.markov_matrix_probabilities import battle_summary
+from project_risk.mathematical.small_graph_model.small_graph_outcome_probabilities import (
     GlobalState,
     NodeState,
     PolicyOption,

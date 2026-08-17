@@ -1,7 +1,12 @@
 import unittest
 
-from risk_strategy.exact_finite_solver import CompactExactTopologySolver, combat_df_for_caps
-from risk_strategy.small_graph_outcome_probabilities import canonicalize_edges_with_roles
+from project_risk.mathematical.small_graph_model.exact_finite_solver import (
+    CompactExactTopologySolver,
+    combat_df_for_caps,
+)
+from project_risk.mathematical.small_graph_model.small_graph_outcome_probabilities import (
+    canonicalize_edges_with_roles,
+)
 
 
 EDGES = ((0, 2), (1, 2), (1, 3))

@@ -1,6 +1,6 @@
 import unittest
 
-from risk_strategy.distribution_comparison_metrics import total_variation_distance
+from project_risk.validation.distribution_comparison_metrics import total_variation_distance
 
 
 class DistributionMetricTests(unittest.TestCase):
