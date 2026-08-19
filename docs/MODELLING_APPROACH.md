@@ -150,27 +150,27 @@ state.
 
 Writing the transition matrix in canonical absorbing form,
 
-\[
+$$
 P =
 \begin{bmatrix}
 Q & R \\
 0 & I
 \end{bmatrix},
-\]
+$$
 
 the fundamental matrix is
 
-\[
-N=(I-Q)^{-1},
-\]
+$$
+N = (I - Q)^{-1},
+$$
 
 and the probabilities of absorption in each terminal state are
 
-\[
-F=NR.
-\]
+$$
+F = NR.
+$$
 
-A row of \(F\) gives considerably more information than a single probability of
+A row of $F$ gives considerably more information than a single probability of
 victory. It gives the complete probability distribution over the possible
 terminal troop configurations of the battle.
 
@@ -210,16 +210,15 @@ attack, the node-to-node combat model provides the possible battle outcomes and
 their probabilities. Each outcome produces a new graph state, from which
 another decision may have to be made.
 
-For a state \(s\), a legal action \(a\), and possible successor states \(s'\),
+For a state $s$, a legal action $a$, and possible successor states $s'$,
 the reasoning is Bellman-like:
 
-\[
-V(s)
-=
+$$
+V(s) =
 \max_{a \in A(s)}
 \sum_{s'}
-P(s' \mid s,a)V(s').
-\]
+P(s' \mid s, a) V(s').
+$$
 
 Conceptually this creates a game tree. In practice, many different paths arrive
 at the same ownership-and-troop configuration. The calculation is therefore
@@ -397,7 +396,7 @@ distributions are stored so that later calculations can query them directly.
 
 At runtime the intended flow is approximately:
 
-\[
+$$
 \text{large-graph state}
 \rightarrow
 \text{local combat region}
@@ -407,7 +406,7 @@ At runtime the intended flow is approximately:
 \text{troop configuration}
 \rightarrow
 \text{precomputed policy distribution}.
-\]
+$$
 
 This turns repeated tactical optimization into an amortized-computation problem:
 solve the expensive stochastic decision problem once, then reuse the result many
@@ -545,13 +544,13 @@ distributions are retrieved.
 
 This gives the first large-graph approximation:
 
-\[
+$$
 \text{large combat graph}
 \rightarrow
 \text{small exact-supported regions}
 \rightarrow
 \text{regional policy distributions}.
-\]
+$$
 
 ### 4.2 Enumerating partitions and regional policies
 
@@ -590,7 +589,7 @@ split.
 
 The approximate look-ahead therefore became conceptually:
 
-\[
+$$
 \text{large state}_t
 \rightarrow
 \text{partition}_t
@@ -600,7 +599,7 @@ The approximate look-ahead therefore became conceptually:
 \text{large state}_{t+1}
 \rightarrow
 \text{new partition}_{t+1}.
-\]
+$$
 
 Monte Carlo simulation was used to repeat this process across many sampled
 successors and estimate the downstream value of each candidate.
@@ -673,16 +672,16 @@ For weakly connected bridge-like cases, regional composition reproduced the
 full exact distribution very closely. Across nine retained bridge cases, the
 mean total-variation distance was approximately
 
-\[
+$$
 0.0061.
-\]
+$$
 
 In double-front cases, the behaviour was very different. Across ten cases, mean
 total-variation distance was approximately
 
-\[
+$$
 0.798,
-\]
+$$
 
 and several cases had total variation equal to one.
 
@@ -743,7 +742,7 @@ The present research direction is therefore best described as a
 
 Conceptually, its preferred routing is:
 
-\[
+$$
 \text{full exact}
 \rightarrow
 \text{coupled exact region}
@@ -751,7 +750,7 @@ Conceptually, its preferred routing is:
 \text{weakly coupled regional composition}
 \rightarrow
 \text{approximate transition model}.
-\]
+$$
 
 The first choice is full exact calculation whenever empirical resource limits
 make it practical.
@@ -798,7 +797,7 @@ for a cheaper predictive model.
 This relationship is central to the interpretation of both the statistical and
 machine-learning phases:
 
-\[
+$$
 \text{initial large-graph state}
 \rightarrow
 \text{expensive partition-based model}
@@ -806,7 +805,7 @@ machine-learning phases:
 \text{generated target}
 \rightarrow
 \text{statistical or ML surrogate}.
-\]
+$$
 
 The surrogate was therefore intended to learn the behaviour of the large-graph
 solver, not to replace the underlying strategic definition of the problem.
@@ -831,9 +830,9 @@ Initial multiple regression models showed that simple variables such as troop
 and territory ratios already contained substantial predictive information. One
 historical two-variable fit reached approximately
 
-\[
+$$
 R^2 \approx 0.952.
-\]
+$$
 
 The high fit was encouraging, but the residuals were not structureless.
 Interactions and polynomial terms were introduced, followed by models more
@@ -853,19 +852,19 @@ The problem was the type of output.
 
 A macro model estimates something like
 
-\[
-E[Y_{t+1}\mid M(S_t)],
-\]
+$$
+E[Y_{t+1} \mid M(S_t)],
+$$
 
-where \(M(S_t)\) is a compressed description of the current state.
+where $M(S_t)$ is a compressed description of the current state.
 
 A recursive simulation does not merely require an expected number of
 territories or an expected troop balance. It requires a concrete successor
 state, or a distribution over concrete successor states:
 
-\[
-P(S_{t+1}\mid S_t,\pi).
-\]
+$$
+P(S_{t+1} \mid S_t, \pi).
+$$
 
 Two board states can have almost identical territory ratios, troop ratios, Gini
 coefficients and coarse topology while having different borders, different
@@ -906,7 +905,7 @@ neighbouring ownership, neighbouring troop strength and frontier position.
 
 Random Forest classifiers and regressors were trained on these labels.
 Historically, the continent-specific models achieved strong predictive metrics,
-including capture ROC-AUC values around 0.985--0.995.
+including capture ROC-AUC values around $0.985$–$0.995$.
 
 Those results should be interpreted carefully.
 
@@ -984,9 +983,9 @@ signatures rather than independent node marginals.
 
 The later experimental pipeline therefore shifted toward learning
 
-\[
-P(S' \mid S,\text{policy or active-player transition})
-\]
+$$
+P(S' \mid S, \text{policy or active-player transition})
+$$
 
 over complete successor states.
 
@@ -1030,7 +1029,7 @@ transition predictor.
 
 Conceptually:
 
-\[
+$$
 S_t
 \rightarrow
 \text{player A transition}
@@ -1041,7 +1040,7 @@ S_{t+1}
 \rightarrow
 S_{t+2}
 \rightarrow \cdots
-\]
+$$
 
 This created a new modelling layer. A full turn contains more than combat, and a
 full board contains more than one continent-scale battle graph.
@@ -1176,7 +1175,7 @@ and terminal utility converts those states into payoffs.
 
 Repeating the process over combinations of commitments produces a payoff matrix:
 
-\[
+$$
 \text{commitment profile}
 \rightarrow
 \text{multi-turn rollout}
@@ -1186,7 +1185,7 @@ Repeating the process over combinations of commitments produces a payoff matrix:
 \text{utility}
 \rightarrow
 \text{payoff}.
-\]
+$$
 
 The module then compares the strategic consequences of different commitment
 combinations.
@@ -1265,7 +1264,7 @@ previously assumed to require approximation can instead be solved explicitly.
 
 The resulting large-graph hybrid direction is therefore:
 
-\[
+$$
 \text{solve exactly when practical}
 \rightarrow
 \text{preserve strongly coupled exact regions}
@@ -1273,7 +1272,7 @@ The resulting large-graph hybrid direction is therefore:
 \text{partition only where coupling is weak}
 \rightarrow
 \text{approximate only when necessary}.
-\]
+$$
 
 Several open problems follow directly from that design.
 

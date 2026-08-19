@@ -328,11 +328,11 @@ or redirect actions in another.
 
 | Experiment | Result | Modelling implication |
 |---|---:|---|
-| Exact tractability pilot | 360/360 cases completed; worst runtime `0.783527 s` | Exact solving was practical over a wider region than loose bounds suggested. |
-| Exact composition vs 10,000-sample Monte Carlo | `0.000496 s` vs `4.008617 s`; MC TV error `0.003499` | Sampling a tractable product distribution can add cost and noise. |
-| Weakly coupled bridge cases | mean TV `0.006117` | Regional decomposition can be highly accurate when coupling is weak. |
-| Strongly coupled double-front cases | mean TV `0.797696` | Independent regions can lose essential sequence dependence. |
-| Exact regional candidate selection | changed 15/50 selections, but all seven previous TV=1 failures remained | Better ranking cannot repair dependencies discarded by decomposition. |
+| Exact tractability pilot | $360/360$ cases completed; worst runtime $0.783527\,\mathrm{s}$ | Exact solving was practical over a wider region than loose bounds suggested. |
+| Exact composition vs 10,000-sample Monte Carlo | $0.000496\,\mathrm{s}$ vs $4.008617\,\mathrm{s}$; MC TV error $0.003499$ | Sampling a tractable product distribution can add cost and noise. |
+| Weakly coupled bridge cases | mean TV $0.006117$ | Regional decomposition can be highly accurate when coupling is weak. |
+| Strongly coupled double-front cases | mean TV $0.797696$ | Independent regions can lose essential sequence dependence. |
+| Exact regional candidate selection | changed $15/50$ selections, but all seven previous $\mathrm{TV}=1$ failures remained | Better ranking cannot repair dependencies discarded by decomposition. |
 | Exact tied-policy study | equal values produced materially different successor distributions | Equal utility does not make transition models interchangeable. |
 
 See [`docs/validation.md`](docs/validation.md) for conditions, provenance and
@@ -413,7 +413,7 @@ the concrete legal successor state required for recursive simulation.
 
 The next generation predicted ownership and troop outcomes for individual
 nodes. Historical models achieved strong metrics relative to their generated
-labels, including capture ROC-AUC values around 0.985--0.995.
+labels, including capture ROC-AUC values around $0.985$–$0.995$.
 
 The larger limitation was target validity. The labels inherited older local
 objectives, plateau-based high-troop policies, unvalidated regional

@@ -169,18 +169,18 @@ The architecture distinguishes transition generation from outcome evaluation.
 
 The transition contract is:
 
-\[
-P(S' \mid S,\pi),
-\]
+$$
+P(S' \mid S, \pi),
+$$
 
-where (S) is the current state, (pi) is a tactical or strategic policy and
-(S') is a concrete successor state.
+where $S$ is the current state, $\pi$ is a tactical or strategic policy and
+$S'$ is a concrete successor state.
 
 The evaluation contract is:
 
-\[
+$$
 U(S'),
-\]
+$$
 
 which scores a compatible outcome independently of the mechanism that produced
 it.
@@ -218,23 +218,23 @@ Under a fixed combat policy, one attacker-controlled node and one
 defender-controlled node form a finite absorbing Markov chain. With the
 transition matrix in canonical form,
 
-\[
+$$
 P =
 \begin{bmatrix}
 Q & R \\
 0 & I
 \end{bmatrix},
-\]
+$$
 
 the fundamental matrix and absorption probabilities are
 
-\[
-N=(I-Q)^{-1},
+$$
+N = (I - Q)^{-1},
 \qquad
-F=NR.
-\]
+F = NR.
+$$
 
-A row of (F) gives the complete probability distribution over terminal troop
+A row of $F$ gives the complete probability distribution over terminal troop
 configurations for the battle.
 
 The combat kernel answers:
@@ -267,11 +267,11 @@ For each reachable state, the solver:
 
 The recursion is Bellman-like:
 
-\[
-V(s)=
-\max_{a\in A(s)}
-\sum_{s'} P(s'\mid s,a)V(s').
-\]
+$$
+V(s) =
+\max_{a \in A(s)}
+\sum_{s'} P(s' \mid s, a) V(s').
+$$
 
 Many battle sequences arrive at the same ownership-and-troop configuration.
 The reachable process is therefore represented as a finite state DAG rather than
@@ -280,13 +280,13 @@ continuations once.
 
 The local objective is normally lexicographic:
 
-\[
+$$
 \left(
 E[\text{new territories}],
 E[\text{final attacker troops}],
 P(\text{local conquest})
 \right).
-\]
+$$
 
 The output consists of both an optimal value and a joint probability
 distribution over concrete terminal graph states.
@@ -319,15 +319,15 @@ graph.
 `exact_policy_dag.py` exposes tied optimal choices at several depths and is used
 mainly for validation and policy-identity research. It makes explicit that
 
-\[
-V(\pi_1)=V(\pi_2)
-\]
+$$
+V(\pi_1) = V(\pi_2)
+$$
 
 does not imply
 
-\[
-P(S'\mid\pi_1)=P(S'\mid\pi_2).
-\]
+$$
+P(S' \mid \pi_1) = P(S' \mid \pi_2).
+$$
 
 This distinction affects library payloads, regional policy composition and
 training-label semantics.
@@ -433,9 +433,9 @@ For one canonical topology, a `CompactExactTopologySolver` can reuse its
 dynamic-programming caches across many initial troop configurations. The
 approximate number of initial rows for a topology is
 
-\[
-\text{maxA}^{n_A}\text{maxD}^{n_D}.
-\]
+$$
+\mathrm{maxA}^{n_A} \mathrm{maxD}^{n_D}.
+$$
 
 Graph topology adds a separate combinatorial dimension. Parallel generation is
 therefore performed mainly across topologies so each worker can retain the value
@@ -456,14 +456,14 @@ Later V2 payloads use aligned numerical arrays describing:
 - final attacker troops; and
 - local conquest indicators.
 
-For probabilities (p=(p_1,\ldots,p_k)), expected derived values can be
+For probabilities $p = (p_1, \ldots, p_k)$, expected derived values can be
 calculated directly, for example
 
-\[
+$$
 E[\text{new territories}]
 =
 \sum_i p_i n_i.
-\]
+$$
 
 Multiple tied policies can be stored under one initial state while each remains
 independently sampleable and retains its own joint successor distribution.
@@ -678,9 +678,9 @@ model.
 Regional approximations were compared with full exact reference distributions.
 
 - Across nine weakly connected bridge cases, mean total-variation distance was
-  approximately `0.0061`.
+  approximately $0.0061$.
 - Across ten strongly coupled double-front cases, mean total-variation distance
-  was approximately `0.798`, with several cases at total variation one.
+  was approximately $0.798$, with several cases at total variation one.
 - More exact candidate ranking changed some selections but did not remove the
   severe double-front failures.
 
@@ -777,9 +777,9 @@ coupled region remains open.
 The transition-prediction layer is a surrogate branch of the expensive
 large-graph process. Its target is approximately
 
-\[
-P(S'\mid S,\text{active-player transition or policy}).
-\]
+$$
+P(S' \mid S, \text{active-player transition or policy}).
+$$
 
 It primarily models one continent-scale active-player combat transition. The
 separate `full_board_model` layer chains those transitions across players and
