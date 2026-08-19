@@ -274,23 +274,26 @@ policies are evaluated.
 
 #### What second-wave Monte Carlo does
 
-The implemented look-ahead samples concrete regional outcomes, reconstructs the
-resulting large state, rebuilds the active battle graph and evaluates a newly
-partitioned next tactical wave:
+Second-wave Monte Carlo partially addresses the problem of lacking interaction 
+between regions by sampling concrete regional outcomes, reconstructing the 
+resulting global state and evaluating the next tactical situation.
 
 ```text
 [Sample regional outcomes] → [Reconstruct large state] → [Rebuild battle graph] → [Repartition] → [Evaluate next wave]
 ```
 
-This can capture interactions that emerge after the first wave. It can improve
-downstream evaluation, but it cannot reconstruct dependencies already discarded
-when the initial graph was split. Monte Carlo therefore does not automatically
-make a regional decomposition accurate.
+This captures interactions that appear after the first
+wave, but it cannot recover dependencies that were already lost when the initial
+graph was divided.
+
+The quality of the regional approximation therefore depends mainly on how
+strongly the regions interact.
 
 ### What validation showed
 
-Validation compared an approximate successor-state distribution $P$ with an
-exact distribution $Q$ using total variation distance:
+To evaluate the regional approximation, several experiments compared its predicted 
+successor-state distribution $P$ with an exact distribution $Q$ of the same problem 
+using total variation distance.
 
 $$
 \mathrm{TV}(P, Q) = \frac{1}{2}\sum_s \lvert P(s) - Q(s) \rvert.
@@ -379,19 +382,25 @@ graph or policy semantics below it.
 
 ### Macro statistical models
 
-Regression, GLMs and GAMs used strategic descriptors such as troop and territory
-balance, concentration, topology and reserve distance. These models captured
-broad strategic outcomes well, but a compressed expectation could not reconstruct
-the concrete legal successor state required for recursive simulation.
+Initially, regression models, GLMs and GAMs were used in an attempt to extract 
+useful macro patterns from the game board. These models used strategic descriptors 
+such as troop- and territory balance, concentration, topology and reserve distance 
+together with predicted outcomes from the continent model in order to associate 
+the macro states with specific outcomes on the board.
+
+Although this approach proved to be problematic in many ways (see
+[`docs/MODELLING_APPROACH.md`](docs/MODELLING_APPROACH.md)), 
+the concept of associating strategic descriptors with outcomes was kept 
+and further elaborated. 
 
 ### Node-level Random Forest models
 
-The next generation predicted ownership and troop outcomes for individual
+The RF models predicted ownership and troop outcomes for individual
 nodes. Historical models achieved strong metrics relative to their generated
 labels, including capture ROC-AUC values around $0.985$–$0.995$.
 
 The larger limitation was target validity. The labels inherited older local
-objectives, plateau-based high-troop policies, unvalidated regional
+utility functions, plateau-based high-troop policies, unvalidated regional
 decomposition and incomplete edge-case coverage. Row-level train/test splits
 could also overstate generalization.
 
