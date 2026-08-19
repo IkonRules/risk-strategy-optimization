@@ -396,7 +396,7 @@ and further elaborated.
 ### Node-level Random Forest models
 
 The RF models predicted ownership and troop outcomes for individual
-nodes. Historical models achieved strong metrics relative to their generated
+nodes. Models achieved strong metrics relative to their generated
 labels, including capture ROC-AUC values around $0.985$–$0.995$.
 
 The larger limitation was target validity. The labels inherited older local
