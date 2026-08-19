@@ -9,19 +9,7 @@ This document is the technical counterpart to
 pipeline:
 
 ```text
-strategic objectives and evaluation contract
-        ↓
-small_graph_model
-        ↓
-libraries
-        ↓
-continent_model
-        ↓
-transition_prediction_ml
-        ↓
-full_board_model
-        ↓
-strategic_evaluation
+[Strategic goals] → [Small graphs] → [Policy libraries] → [Large graphs] → [Transition approximation] → [Multi-turn model] → [Strategic evaluation]
 ```
 
 The order describes architectural responsibility, not a claim that every layer
@@ -96,7 +84,7 @@ flowchart TD
     subgraph SMALL["small_graph_model"]
         C["Markov combat kernel"]
         S["Exact sequential policy solver"]
-        P["Policy-aware joint successor distributions"]
+        P["Policy-specific terminal-state distributions"]
     end
 
     subgraph LIB["libraries"]
@@ -106,8 +94,8 @@ flowchart TD
     end
 
     subgraph LARGE["continent_model"]
-        R["Exact / coupled / regional routing"]
-        D["Large-graph successor distribution"]
+        R["Extend tactical solving to larger graphs<br/>with exact regional policies and<br/>controlled approximation"]
+        D["Large-graph successor-state model"]
     end
 
     subgraph ML["transition_prediction_ml"]
@@ -139,7 +127,7 @@ flowchart TD
 The strongest implemented path is not identical to this desired end-to-end
 flow. Exact solving and library generation are mature; the library-backed
 regional route is the most complete production-like large-graph implementation;
-the latest exact-first router, corrected learned surrogate and particle
+the target exact-first routing, corrected learned surrogate and particle
 full-board route are not yet connected as one runtime.
 
 ### 1.3 Three graph scales
@@ -252,9 +240,20 @@ globally optimal full-board behaviour.
 When several hostile edges are available, attack selection becomes a sequential
 decision problem.
 
-`small_graph_outcome_probabilities.py` defines the principal state, action,
-terminal and utility semantics. `exact_finite_solver.py` provides the compact,
-more computationally efficient implementation.
+`small_graph_outcome_probabilities.py` is the semantic and reference module. It
+defines shared structures such as `GlobalState`, `NodeState` and `PolicyOption`,
+along with state encoding, local-value comparison and the older recursive exact
+behaviour retained for reference and compatibility.
+
+`exact_finite_solver.py` imports those shared definitions and implements the same
+whole-battle small-graph model with compact integer states, topology-level shared
+caches, precomputed combat rows and separate value/distribution passes.
+`create_library.py` uses `CompactExactTopologySolver` for the current
+exact-finite library builder.
+
+The two files are therefore **not successive mathematical stages**. The compact
+solver supersedes the per-row recursive solver for practical exact computation,
+while relying on the state and model semantics defined by the reference module.
 
 For each reachable state, the solver:
 
@@ -350,15 +349,7 @@ separation between value solving and terminal-distribution reconstruction.
 The resulting architecture is:
 
 ```text
-historical explicit calculation
-        ↓
-plateau approximation above the tractable range
-        ↓
-memoized dynamic programming
-        ↓
-compact exact finite solver
-        ↓
-direct exact support for the intended troop caps
+[Explicit recursion] → [Plateau approximation] → [Memoized dynamic programming] → [Compact exact solver] → [Direct exact troop-cap support]
 ```
 
 `create_library.py` and `library_io.py` retain limited historical plateau and
@@ -385,13 +376,7 @@ therefore canonicalizes graphs under permutations that preserve attacker and
 defender roles.
 
 ```text
-labelled local graph
-        ↓
-role-preserving relabellings
-        ↓
-canonical topology and node mapping
-        ↓
-solve or query once
+[Labelled graph] → [Role-preserving relabellings] → [Canonical topology + mapping] → [Solve or query once]
 ```
 
 The canonical topology becomes the library identity. The canonical-to-global
@@ -416,17 +401,7 @@ libraries and their consumers.
 For a supported attacker/defender pattern and troop cap, it:
 
 ```text
-enumerates graph topologies
-        ↓
-canonicalizes equivalent graphs
-        ↓
-generates troop configurations
-        ↓
-solves each initial state exactly
-        ↓
-retains policy-specific terminal distributions
-        ↓
-serializes graph indexes and row chunks
+[Enumerate topologies] → [Canonicalize] → [Generate troop rows] → [Solve exactly] → [Retain policy distributions] → [Write indexes and chunks]
 ```
 
 For one canonical topology, a `CompactExactTopologySolver` can reuse its
@@ -507,21 +482,7 @@ part of the public repository.
 The runtime route is separate from offline generation:
 
 ```text
-large-state region
-        ↓
-normalize players to A / D
-        ↓
-remove irrelevant local nodes
-        ↓
-select attacker/defender pattern and troop-cap library
-        ↓
-canonicalize topology and retain global mapping
-        ↓
-library_io.py resolves graph, row and chunk
-        ↓
-recover one or more policy distributions
-        ↓
-map outcomes back to the larger state
+[Large-state region] → [Normalize A / D] → [Prune] → [Select library] → [Canonicalize + map] → [Load row chunk] → [Recover policies] → [Map outcomes back]
 ```
 
 `approximate_graph_outcome_probabilities.py` is the principal domain-to-library
@@ -546,9 +507,10 @@ coverage for unbalanced attacker/defender configurations.
 
 ## 5. Continent / large-graph model
 
-The large-graph layer addresses growth in the number of interacting nodes. Its
-historical backbone is regional decomposition; its current research direction
-adds empirical exact routing and explicit coupling checks before decomposition.
+The large-graph layer addresses growth in the number of interacting nodes. The
+current implemented path is library-backed regional decomposition. Validation
+supports a later exact-first, coupling-aware router, but that router has not
+replaced the production path.
 
 The central implemented modules are:
 
@@ -571,204 +533,182 @@ The graph retains:
 This mapping allows canonical local outcomes to be translated back into
 concrete state transitions.
 
-### 5.2 Supported partitions and regional policies
+### 5.2 Use the largest exact regions available
 
-For graphs beyond one supported library region, the implemented route generates
-candidate connected regions subject to attacker/defender composition and
-library coverage.
+For graphs beyond one supported library region,
+`partition_continent_battle_graph_into_valid_small_graphs()` generates connected,
+disjoint regions subject to attacker/defender composition, topology and available
+library coverage. Each region is canonicalized and queried through
+`approximate_graph_outcome_probabilities.py`.
 
-A valid partition covers the relevant node universe with disjoint supported
-regions. Each region is canonicalized and queried, potentially producing
-several tied policy distributions.
+```mermaid
+flowchart LR
+    G["Active battle graph"] --> P["Supported partitions"]
+    P --> Q["Exact regional queries"]
+    Q --> O["Policy alternatives"]
+    O --> C["Partition-policy candidates"]
+    C --> L["Downstream evaluation"]
+```
+
+`filter_maximal_supported_partitions()` implements the preference for larger
+exact-supported regions. Its `is_strict_exact_coarsening()` rule treats a finer
+partition as dominated when:
+
+1. both partitions cover the same node universe;
+2. the coarser partition contains fewer regions; and
+3. every region in the finer partition is contained in a region of the coarser
+   partition.
+
+The default `maximal_per_partition_utility` candidate-preparation mode removes
+such dominated fine partitions before comparing local utility. This keeps more
+interaction inside each exact library query. It is a rule within the current
+library-supported regional model; it is not yet the broader runtime exact-region
+selection proposed by the exact-first target architecture.
+
+Each retained region can expose multiple locally tied policy distributions.
+`expand_partition_policy_candidates()` constructs combinations over both
+partition identity and policy identity. Equal local utility does not make two
+policies interchangeable when their concrete successor distributions create
+different next-wave opportunities.
+
+### 5.3 The main approximation comes from splitting the graph
+
+Every selected region can have an exact library-backed policy distribution. The
+large-graph result is nevertheless approximate when the partition treats those
+regional processes as separate.
+
+The technical distinction is:
+
+- **decomposition** chooses to model the regions separately; and
+- **composition** combines their successor distributions after that assumption
+  has been made.
+
+If no action or outcome in one region can affect the legal actions or optimal
+continuation in another, the regional distributions can be combined directly.
+The validation helper `compose_selected_candidate_distribution_exact()` computes
+that product distribution without Monte Carlo error.
+
+If regions interact, decomposition has already removed dependence. Cross-region
+effects include newly opened attack sequences, outcome-dependent stopping,
+different surviving troop locations and changes in the next optimal action. An
+exact calculation of the factorized product is exact only for the assumed
+independent-regions model, not necessarily for the original large graph.
+
+### 5.4 Second-wave Monte Carlo and re-partitioning
+
+The implemented look-ahead evaluates how first-wave outcomes change the next
+tactical situation. `_monte_carlo_lookahead_for_partition()` obtains the
+policy-specific regional distributions, samples one concrete outcome per region,
+overlays them into a new `GlobalState`, synchronizes the compatible board state
+and reruns the regional ranking path for the successor.
+
+```text
+[Regional policy candidate] → [Sample outcomes] → [Assemble successor state] → [Re-evaluate graph] → [Repartition] → [Score next wave]
+```
+
+The next partition is generated under the sampled successor state, so region
+boundaries can change after a conquest. Monte Carlo repetition estimates the
+downstream value of the original partition-policy candidate.
+
+This look-ahead can capture interactions that become visible after the sampled
+first wave. It cannot reconstruct a dependency already discarded by the initial
+partition. Second-wave Monte Carlo is therefore a downstream evaluator, not a
+proof that the original decomposition was valid.
+
+### 5.5 What validation showed
+
+The retained validation compares an approximate successor-state distribution
+$P$ with a full exact reference distribution $Q$ using total variation distance:
+
+$$
+\mathrm{TV}(P, Q) = \frac{1}{2}\sum_s \lvert P(s) - Q(s) \rvert.
+$$
+
+$\mathrm{TV}=0$ means identical distributions; values closer to $1$ indicate
+increasingly different distributions.
+
+| Question tested | What was observed | Architectural implication |
+| --- | --- | --- |
+| Can current states outside normal library coverage sometimes be solved exactly? | $360/360$ deterministic cases completed; worst runtime $0.783527\,\mathrm{s}$. | Library generation coverage is not the runtime boundary for one exact state. |
+| Is Monte Carlo required to combine regional distributions after assuming independence? | Direct composition took $0.000496\,\mathrm{s}$; $10{,}000$ samples took $4.008617\,\mathrm{s}$ and had TV error $0.003499$. | Direct composition is faster and exact for the assumed factorized model. |
+| How accurate is splitting under weak interaction? | Nine bridge cases had mean TV $0.006117$. | Regional decomposition can closely match the full exact distribution when coupling is weak. |
+| What happens under strong interaction? | Ten double-front cases had mean TV $0.797696$. | Splitting can remove essential sequence dependence. |
+| Can more exact regional candidate selection repair decomposition? | The selected candidate changed in $15/50$ cases; all seven earlier $\mathrm{TV}=1$ failures remained. | Ranking cannot restore dependencies already removed by the split. |
+| Are equal-valued policies interchangeable? | Tied local policies produced materially different successor distributions. | Policy identity must survive when downstream state differences matter. |
+
+A broader 315-cell exact-tractability expansion completed 311 cells under a
+ten-second stop. The remaining difficult cells reached the runtime safeguard;
+the result supports bounded exact attempts with fallback, not one unconditional
+new exact boundary. Detailed conditions and provenance remain in
+[`validation.md`](validation.md).
+
+### 5.6 Current implemented route
+
+Offline library generation and runtime consumption are distinct:
+
+```text
+OFFLINE: [Shared small-graph semantics + compact exact solver] → [create_library.py] → [Generated policy libraries]
+```
+
+```text
+RUNTIME: [Active battle graph] → [approximate_graph_outcome_probabilities.py] → [library_io.py] → [battle_graph_ranking.py] → [Selected regional successor model]
+```
+
+The runtime path enumerates library-supported regions, filters dominated fine
+partitions, retains relevant policy alternatives and optionally performs
+second-wave look-ahead. It does not first attempt a full exact solve of every
+current active battle graph.
+
+### 5.7 Exact-first target architecture
+
+Library construction and one-off runtime solving have different costs. A library
+must cover many canonical topologies, troop configurations and initial rows. A
+runtime exact attempt needs only the current topology and state. The validated
+tractability results therefore show that absence from the precomputed library is
+not, by itself, evidence that one exact solve is infeasible.
+
+The target architecture would:
+
+1. attempt the whole current active graph under empirical runtime/state limits;
+2. if that fails, build a coupling-aware decomposition that keeps strongly
+   interacting nodes in the largest exact calculation feasible;
+3. continue to model every node outside that exact region;
+4. use separate regional policies only where the remaining cross-region
+   interaction is weak enough; and
+5. use a joint-state approximation for unresolved strongly dependent structure.
 
 ```mermaid
 flowchart TD
-    G["Large active battle graph"]
-    P["Generate supported partitions"]
-    Q["Query exact regional policy libraries"]
-    O["Retain regional policy alternatives"]
-    C["Construct partition-policy combinations"]
-    U["Compare compounded local utility"]
-    T["Retain optimal or tied candidates"]
-    L["Downstream look-ahead"]
-    S["Large successor-state distribution"]
-
-    G --> P
-    P --> Q
-    Q --> O
-    O --> C
-    C --> U
-    U --> T
-    T --> L
-    L --> S
-```
-
-The ranking problem therefore ranges over both partition identity and policy
-identity.
-
-### 5.3 Second-wave look-ahead and re-partitioning
-
-The first regional wave cannot always distinguish locally tied candidates.
-For each retained partition-policy combination, the second stage samples one
-concrete outcome from each regional distribution and overlays the results on the
-large state.
-
-The sampled successor is treated as a new large-graph state:
-
-```text
-candidate regional policies
-        ↓
-sample concrete regional outcomes
-        ↓
-construct large successor state
-        ↓
-rebuild active battle graph
-        ↓
-generate a new partition
-        ↓
-optimize the next tactical wave
-```
-
-Region boundaries are redrawn after every sampled transition. A conquest can
-place previously separate nodes in one new region, split an old region or remove
-an interaction entirely. Monte Carlo repetition estimates the downstream value
-of the original candidate.
-
-### 5.4 Preference for larger exact regions
-
-Fine partitions remove more interaction before policies are compared. When the
-same node universe can be represented by a coarser exact-supported partition,
-the finer representation has no precision advantage.
-
-Candidate preparation therefore applies a maximal-supported principle. A finer
-partition is dominated when:
-
-1. a strict exact coarsening covers the same node universe;
-2. the coarsening uses fewer regions; and
-3. every region in the finer partition is contained in a region of the
-   coarsening.
-
-Dominated fine partitions are removed before later utility comparison.
-
-This is stronger than a small ranking preference. It makes preservation of
-exact coupling part of the representation contract.
-
-### 5.5 Composition versus decomposition
-
-Regional modelling contains two independent approximation questions.
-
-**Composition** asks how several known regional distributions should be combined
-into a larger successor distribution.
-
-**Decomposition** asks whether those regions could validly be treated as
-separate stochastic components.
-
-Exact Cartesian composition can be cheap once regional distributions are known.
-Sampling that same product with Monte Carlo may add cost and noise. Monte Carlo
-remains useful for downstream look-ahead when many concrete successors must be
-rebuilt, repartitioned and evaluated.
-
-Exact composition does not validate decomposition. If success in one region
-opens an action into another, or stopping in one branch changes available forces
-elsewhere, the true process contains dependencies absent from the factorized
-model.
-
-### 5.6 Validation and exact tractability
-
-Regional approximations were compared with full exact reference distributions.
-
-- Across nine weakly connected bridge cases, mean total-variation distance was
-  approximately $0.0061$.
-- Across ten strongly coupled double-front cases, mean total-variation distance
-  was approximately $0.798$, with several cases at total variation one.
-- More exact candidate ranking changed some selections but did not remove the
-  severe double-front failures.
-
-The failures were structural: improving ranking cannot restore dependencies
-discarded during decomposition.
-
-At the same time, improved exact solving showed that some graphs previously
-routed toward approximation were directly tractable. One study completed all
-360 tested cases over six- to eight-node graphs and troop caps three to five
-within its resource budget, with the worst recorded runtime below one second. A
-broader 315-cell experiment completed 311 cells under a ten-second stop.
-
-The architectural question therefore changed from “how should this large graph
-be approximated?” to “is approximation necessary for this graph at all?”
-
-### 5.7 Implemented route and exact-first target
-
-The mature offline and implemented runtime routes are distinct.
-
-```text
-OFFLINE EXACT GENERATION
-
-markov_matrix_probabilities.py
-        ↓
-small_graph_outcome_probabilities.py
-        ↓
-exact_finite_solver.py
-        ↓
-create_library.py
-        ↓
-generated exact policy libraries
-```
-
-```text
-IMPLEMENTED LIBRARY-BACKED RUNTIME
-
-large state / active battle graph
-        ↓
-approximate_graph_outcome_probabilities.py
-        ↓
-library_io.py
-        ↓
-battle_graph_ranking.py
-        ↓
-selected successor distribution
-        ↓
-simulation, data generation or later transition layer
-```
-
-Validation supports a revised target router:
-
-```mermaid
-flowchart TD
-    G["Active combat graph"]
-    F{"Full exact within empirical budget?"}
-    X["Solve full graph exactly"]
-
-    C{"Can strongly coupled structure<br/>be retained in an exact region?"}
-    M["Solve coupled macro-region exactly"]
-
-    W{"Remaining regions sufficiently<br/>weakly coupled?"}
-    R["Exact regional policies<br/>+ exact composition"]
-
-    A["Bounded joint-state approximation"]
-    J["Policy-aware joint successor distribution"]
+    G["Active battle graph"]
+    F{"Can the whole current graph<br/>be solved exactly?"}
+    X["Solve whole graph exactly"]
+    K["Build coupling-aware decomposition<br/>Keep strongly interacting nodes in the<br/>largest feasible exact region"]
+    W{"Are remaining cross-region<br/>interactions weak enough?"}
+    R["Solve remaining regions separately<br/>and combine all components"]
+    A["Use a joint-state approximation for the<br/>unresolved transition and combine it<br/>with any exact component"]
+    J["Successor-state distribution"]
 
     G --> F
     F -- Yes --> X
-    F -- No --> C
-    C -- Yes --> M
-    C -- No --> W
+    X --> J
+    F -- No --> K
+    K --> W
     W -- Yes --> R
     W -- No --> A
-
-    X --> J
-    M --> J
     R --> J
     A --> J
 ```
 
-The ordering is:
+The larger exact region has no direct edge to the final distribution because it
+does not account for excluded nodes by itself. It is one component of the
+coupling-aware decomposition and must be combined with the model for the rest of
+the graph.
 
-**preserve exactness first, preserve coupling second, approximate only when
-necessary.**
-
-This router is a modelling direction supported by validation, not a fully
-integrated runtime. A general method for identifying the smallest sufficient
-coupled region remains open.
+This is a **target architecture**, not current production behaviour.
+`build_exact_first_routing_analysis()` records `production_routing_changed` as
+false, and the recommendation helpers live under validation rather than the
+runtime `continent_model` path. A general automatic rule for selecting the
+smallest sufficient coupled region remains open.
 
 ---
 
@@ -790,19 +730,7 @@ applies full-board resource mechanics.
 The principal dependency is:
 
 ```text
-initial large-graph state
-        ↓
-generate_data_ML.py
-        ↓
-battle_graph_ranking.py
-        ↓
-approximate_graph_outcome_probabilities.py
-        ↓
-library_io.py and exact policy artifacts
-        ↓
-selected policy / successor distribution
-        ↓
-supervised transition target
+[Large-graph state] → [generate_data_ML.py] → [battle_graph_ranking.py] → [Regional queries + libraries] → [Selected successor distribution] → [Training target]
 ```
 
 The learned model does not bypass the underlying graph and combat semantics. It
@@ -873,13 +801,7 @@ inference models.
 The intended future dependency is:
 
 ```text
-validated large-graph hybrid generator
-        ↓
-policy-aware joint successor targets
-        ↓
-joint-state surrogate
-        ↓
-sampleable coherent transition distribution
+[Validated large-graph generator] → [Policy-aware joint-state targets] → [Joint-state surrogate] → [Coherent transition distribution]
 ```
 
 The surrogate should be rebuilt only after exact routing, coupled-region logic
@@ -927,15 +849,7 @@ The first operational multi-turn route used historical node-level Random Forest
 transitions. It demonstrated the architecture:
 
 ```text
-state at turn t
-        ↓
-active player transition
-        ↓
-resource and board update
-        ↓
-next player perspective
-        ↓
-state at turn t+1
+[State at turn t] → [Active-player transition] → [Resource + board update] → [Next-player perspective] → [State at turn t+1]
 ```
 
 This route inherited the target-generator and node-independence limitations of
@@ -967,17 +881,11 @@ The full-board layer contains two generations:
 2. a joint-state particle direction intended to replace independent node
    propagation.
 
-Neither is connected end to end to the latest exact-first large-graph router.
+Neither is connected end to end to the target exact-first large-graph routing.
 The intended development sequence is:
 
 ```text
-validate large-graph hybrid generator
-        ↓
-define tied-policy target semantics
-        ↓
-rebuild joint-state surrogate
-        ↓
-integrate multi-turn particle rollout
+[Validate large-graph generator] → [Define tied-policy targets] → [Rebuild joint-state surrogate] → [Integrate particle rollout]
 ```
 
 The optional `demo/visualization/SimulationRenderGT.py` only renders compatible
@@ -1005,15 +913,7 @@ This boundary keeps prediction and evaluation separate.
 invokes the GT rollout to construct payoffs:
 
 ```text
-commitment profile
-        ↓
-full-board rollout
-        ↓
-terminal or horizon state
-        ↓
-utility_terminal.py
-        ↓
-profile payoff table
+[Commitment profile] → [Full-board rollout] → [Terminal or horizon state] → [utility_terminal.py] → [Payoff table]
 ```
 
 The module compares the strategic consequences of commitment combinations. It
@@ -1060,7 +960,8 @@ Relevant components include:
 approximations with full exact reference distributions.
 
 These tests revealed the difference between weakly coupled bridge cases and
-strongly coupled double-front cases, motivating the exact-first hybrid route.
+strongly coupled double-front cases, motivating the exact-first target
+direction.
 
 ### 9.6 Training pipeline
 
@@ -1095,7 +996,7 @@ those labels.
 | Library data boundary | `library_io.py` | Indexed chunk lookup and policy-payload normalization at runtime. |
 | Board/region adaptation | `approximate_graph_outcome_probabilities.py` | Extracts supported regions, normalizes roles, selects library coverage and maps outcomes. |
 | Large-graph ranking | `battle_graph_ranking.py` | Ranks partition-policy combinations and performs second-wave evaluation. |
-| Large-graph hybrid router | Conceptual composition of exact solver, coupled regions, regional composition and bounded approximation | Validation-supported target; not fully integrated. |
+| Exact-first routing analysis | `regional_compounding_validation_v2.py` | Recommends later exact-first routing while explicitly leaving production routing unchanged. |
 | Transition data generation | `generate_data_ML.py` | Produces supervised targets from the strategy pipeline. |
 | Historical node ML | `train_ML.py`, `predict_future_states_ML.py` | Learned node marginals from historical generated states. |
 | Joint-state ML | `transition_distribution_ML.py` | Experimental KNN inference over complete successor signatures. |
@@ -1121,15 +1022,7 @@ The compact runnable example under `examples/run_exact_example.py` imports the
 actual research implementation and demonstrates:
 
 ```text
-combat kernel
-    ↓
-small-graph state
-    ↓
-exact finite solver
-    ↓
-optimal and tied policies
-    ↓
-joint terminal successor distribution
+[Combat kernel] → [Small-graph state] → [Exact solver] → [Optimal and tied policies] → [Terminal-state distribution]
 ```
 
 The example deliberately does not require generated multi-gigabyte policy
