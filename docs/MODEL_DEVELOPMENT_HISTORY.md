@@ -14,11 +14,9 @@ not a description of only the current architecture; `MODELLING_APPROACH.md`
 provides the shorter conceptual account, while `architecture.md` describes how
 the public source is organized now.
 
-The surviving material is incomplete. The local research repository preserves
-only one Git commit, `Initial commit` from 2026-01-09, so Git cannot serve as a
-complete development diary. Early chronology is reconstructed from file dates,
-archived programs, notebooks, generated reports, and later recovered
-conversation evidence.
+The surviving material is incomplete. Early chronology is reconstructed from 
+file dates, archived programs, notebooks, generated reports, and later recovered 
+conversation evidence. 
 
 The following evidence labels are used:
 

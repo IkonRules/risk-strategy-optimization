@@ -1,305 +1,284 @@
 # Project Architecture
 
-Project Risk has grown into a layered modelling system for evaluating stochastic
-decisions on graphs.
+Project Risk is a layered modelling system for evaluating stochastic decisions
+on graphs. The reusable research implementation is published under
+`src/project_risk/`.
 
-The reusable research implementation is published under `src/project_risk/`.
-The small exact example is an orchestration entry point under `examples/` that
-imports this implementation directly, so one mathematical component can be
-reproduced without generated policy libraries or trained models and without a
-duplicate compatibility package.
+This document is the technical counterpart to
+[`MODELLING_APPROACH.md`](MODELLING_APPROACH.md). It follows the same modelling
+pipeline:
 
-At the system level, Project Risk connects five main functions:
+```text
+strategic objectives and evaluation contract
+        ↓
+small_graph_model
+        ↓
+libraries
+        ↓
+continent_model
+        ↓
+transition_prediction_ml
+        ↓
+full_board_model
+        ↓
+strategic_evaluation
+```
 
-1. representing and simulating the board;
-2. modelling elementary stochastic combat;
-3. solving tactical decisions exactly where possible;
-4. storing exact local policies for repeated use;
-5. combining, approximating and evaluating those policies on larger graphs.
-
-Several statistical and machine-learning approaches have also occupied the
-large-graph transition layer at different stages of the project.
-
-The resulting architecture contains two high-level systems: the original
-explicit game simulator and the later mathematical strategy pipeline. They
-share board/topology concepts, but no completed adapter installs the advanced
-mathematical strategy as a player policy in the original engine.
+The order describes architectural responsibility, not a claim that every layer
+currently forms one integrated production runtime. The repository also preserves
+an earlier explicit game simulator. That simulator shares board and player
+concepts with the mathematical pipeline but remains a separate execution
+architecture.
 
 ---
 
-## 1. System overview
+## 1. System boundaries and state representations
 
-A simplified view of the research system is:
+### 1.1 Original explicit game simulator
+
+The original simulation platform is under
+`src/project_risk/game_simulation/`. It models mutable territories, players,
+rules, turns, combat, reinforcement and movement.
+
+Its principal dependency structure is:
 
 ```mermaid
 flowchart TD
-    B["Full board state<br/>territories, owners, troops, players"]
-    S["Strategic / simulation layer"]
-    G["Active battle graph"]
+    E["SimulationEngine.py<br/>setup, turn order, execution, repeated runs"]
+    P["Players.py<br/>player state, ownership, strategy hooks"]
+    F["SimulationFunctions.py<br/>rules and state-changing actions"]
+    B["Board.py<br/>territories, topology, owners, troops"]
 
-    subgraph EXACT["Exact local modelling"]
-        M["Markov combat kernel"]
-        E["Exact finite graph solver"]
-        C["Graph canonicalization"]
-        P["Policy-aware successor distributions"]
-    end
-
-    subgraph LIB["Offline exact policy libraries"]
-        L1["Library generation"]
-        L2["Canonical topology/state store"]
-        L3["Chunked policy distributions"]
-    end
-
-    subgraph LARGE["Large-graph decision layer"]
-        R1["Supported regional covers"]
-        R2["Library-backed region queries"]
-        R3["Partition-policy candidates"]
-        R4["Second-wave / global evaluation"]
-    end
-
-    subgraph APPROX["Historical / experimental approximation"]
-        A1["Macro statistical models"]
-        A2["Node-level ML"]
-        A3["Joint successor-state models"]
-    end
-
-    B --> S
-    S --> G
-
-    G --> C
-    C --> E
-    M --> E
     E --> P
-
-    M --> L1
-    E --> L1
-    C --> L1
-    L1 --> L2
-    L2 --> L3
-
-    G --> R1
-    R1 --> R2
-    L3 --> R2
-    R2 --> R3
-    R3 --> R4
-
-    G --> A1
-    G --> A2
-    R4 --> A2
-    R4 --> A3
-
+    E --> F
+    E --> B
+    F --> P
+    F --> B
     P --> B
-    R4 --> B
-    A3 --> B
 ```
 
-Not every branch in this diagram forms one currently integrated production
-pipeline.
+The modules have distinct responsibilities:
 
-The strongest implemented large-graph route is the library-backed regional
-system. The exact finite solver is central to that route **offline**, because it
-generates the policy libraries, but the runtime regional query normally retrieves
-precomputed policies rather than solving each region again.
+- `Board.py` defines `Territory` objects and the board topology. Territory
+  objects carry ownership and troop state.
+- `Players.py` defines `Player` objects, owned territories and early attacking,
+  defending and expansion strategy hooks.
+- `SimulationFunctions.py` implements rules and state transitions, including
+  troop placement, reinforcement, combat, ownership changes, movement and
+  continent updates.
+- `SimulationEngine.py` orchestrates setup, player turns, termination and
+  repeated simulations by composing the other three modules.
 
-The later exact-first architecture changes that routing assumption and is
-described separately below.
+This source is historical but reusable. A complete public game run is not
+claimed as fully validated because the archived engine and rule-helper
+interfaces retain some development drift.
 
-### Three graph scales
+Most importantly, no completed adapter installs the later mathematical strategy
+pipeline as a `Player` policy inside `SimulationEngine`.
 
-The architecture uses three graph scales that should not be conflated:
+### 1.2 Mathematical strategy pipeline
 
-- A **small graph** is a local tactical combat graph solved exactly by
-  `markov_matrix_probabilities.py`, `small_graph_outcome_probabilities.py`, and
-  `exact_finite_solver.py`.
-- A **continent / large battle graph** is a larger active combat structure,
-  often roughly continent-scale, handled by
-  `approximate_graph_outcome_probabilities.py` and `battle_graph_ranking.py`.
-  In transition-data code, a variable named `full_graph` often means the full
-  context graph for one continent transition, not the 42-territory world.
-- The **full board** spans continents and alternating player turns. It adds
-  reinforcement allocation, troop redistribution, fortification, competing
-  objectives, shared frontiers, and multi-turn coordination; it is not merely
-  a larger tactical graph.
+The later research system uses a different state and execution route. Its main
+state representation is `small_graph_outcome_probabilities.GlobalState`, which
+stores ownership and troop arrays together with the graph context required by
+the mathematical models.
 
----
+Some continent battle-graph builders temporarily synchronize information with
+the mutable `Board` representation. This is a compatibility boundary for graph
+construction; it does not make `SimulationEngine` the mathematical turn engine.
 
-## 2. Original simulation and mathematical full-board layers
+The mathematical architecture is:
 
-The project began with a general Risk simulation platform built in Python. Its
-public source is under `src/project_risk/game_simulation/` and includes the
-mutable `Board`, `Players`, rules helpers and `SimulationEngine` orchestration.
+```mermaid
+flowchart TD
+    O["Strategic objective<br/>prediction and evaluation contracts"]
 
-The board is represented as a graph. A territory is a node containing information
-such as ownership, troop count and neighbouring territories. Continents are
-collections of territories defined by the board topology.
+    subgraph SMALL["small_graph_model"]
+        C["Markov combat kernel"]
+        S["Exact sequential policy solver"]
+        P["Policy-aware joint successor distributions"]
+    end
 
-Player objects represent agents acting on the board. They maintain ownership,
-perform actions and can be equipped with different strategy or behaviour rules.
+    subgraph LIB["libraries"]
+        G["Offline generation"]
+        I["Canonical indexed policy store"]
+        Q["Runtime lookup"]
+    end
 
-At the full-board level, a game state is therefore essentially:
+    subgraph LARGE["continent_model"]
+        R["Exact / coupled / regional routing"]
+        D["Large-graph successor distribution"]
+    end
 
-\[
-S =
-\{
-(\text{territory},\text{owner},\text{troops})
-\}_{1}^{N},
-\]
+    subgraph ML["transition_prediction_ml"]
+        T["Generated transition targets"]
+        K["Statistical or learned surrogate"]
+    end
 
-together with the static graph structure and the relevant player state.
+    subgraph FULL["full_board_model"]
+        F["Resource mechanics and alternating-player rollout"]
+    end
 
-The simulation progresses through state transitions:
+    E["strategic_evaluation<br/>terminal utility and commitment payoffs"]
 
-\[
-S_t
-\rightarrow
-a_t
-\rightarrow
-S_{t+1}.
-\]
-
-Some actions have deterministic consequences while combat introduces stochastic
-transitions.
-
-The broader simulation infrastructure provides the environment in which tactical
-policies can eventually be evaluated. It is also the source of states used for
-Monte Carlo experiments, statistical modelling and machine-learning data
-generation.
-
-The later mathematical full-board routes are separate. They use
-`small_graph_outcome_probabilities.GlobalState` as their principal state and
-temporarily synchronize the mutable Board when continent battle-graph builders
-need it. They do not use `SimulationEngine` as their turn engine.
-
-Relevant mathematical components include:
-
-- `full_board_simulation_GT.py`
-- `full_board_simulation_ML.py`
-
-`full_board_simulation_GT.py` currently uses the older node-level learned
-transition route. `full_board_simulation_ML.py` contains both a historical
-deterministic node-marginal rollout and a later joint-state particle rollout.
-Neither currently implements the latest exact-first route end to end.
-
-Despite its name, `full_board_simulation_GT.py` is a commitment-conditioned
-cross-scale rollout, not a general game-theory or equilibrium solver.
-`strategy_policy_gt.py` supplies experimental commitment, reinforcement split,
-shared-frontier and fortification mechanics. The optional
-`demo/visualization/SimulationRenderGT.py` only renders compatible states.
-
-Strategic evaluation is downstream of state generation. `utility_terminal.py`
-is current reusable terminal/global outcome scoring that can consume compatible
-states from any producer. `game_theory_commitment.py` is active experimental
-profile enumeration: it invokes the GT rollout and builds payoff tables, but it
-does not solve or select a Nash equilibrium.
-
----
-
-## 3. From the full board to an active battle graph
-
-Most tactical calculations do not require the entire Risk board.
-
-When combat is being considered, the relevant ownership boundary can be
-represented as an **active battle graph** containing attacker- and
-defender-controlled nodes participating in the immediate tactical problem.
-
-This reduction is important because the complete board may contain many nodes
-that cannot affect the current sequence of attacks.
-
-The battle graph becomes the main interface between the global simulation and
-the tactical modelling system.
-
-At this level the nodes are normalized to combat roles:
-
-- `A` — attacker-owned;
-- `D` — defender-owned.
-
-The graph retains:
-
-- topology;
-- ownership;
-- troop counts;
-- mapping back to the original board nodes.
-
-This mapping is critical. Tactical computation may operate on local and
-canonical node labels, but an action eventually has to be translated back into
-a concrete move on the full board.
-
-`approximate_graph_outcome_probabilities.py` has become an important adapter
-between these two representations. Among other tasks, it extracts regions,
-normalizes ownership roles, constructs canonical local graphs and retains the
-mapping from local indices back to global board nodes.
-
----
-
-## 4. Elementary combat probability layer
-
-The lowest stochastic layer is implemented primarily in:
-
-`markov_matrix_probabilities.py`
-
-It models combat between one attacker-controlled node and one defender-controlled
-node as a finite absorbing Markov chain.
-
-For a chosen attack, the higher-level tactical solver does not need to simulate
-individual dice rolls. Instead, the combat layer returns the complete probability
-distribution over possible terminal outcomes of the battle.
-
-Conceptually:
-
-```text
-attacker troops + defender troops
-                ↓
-       absorbing Markov chain
-                ↓
-probability distribution over
-terminal attacker/defender troops
+    O --> C
+    C --> S
+    S --> P
+    S --> G
+    G --> I
+    I --> Q
+    Q --> R
+    R --> D
+    D --> T
+    T --> K
+    K --> F
+    F --> E
+    O --> E
 ```
 
-This is the elementary stochastic transition used by every higher combat layer.
+The strongest implemented path is not identical to this desired end-to-end
+flow. Exact solving and library generation are mature; the library-backed
+regional route is the most complete production-like large-graph implementation;
+the latest exact-first router, corrected learned surrogate and particle
+full-board route are not yet connected as one runtime.
 
-Separating combat mechanics from strategic decision-making is important. The
-Markov kernel answers:
+### 1.3 Three graph scales
+
+Three graph scales recur in the source and should not be conflated.
+
+1. A **small graph** is a local tactical combat graph handled by
+   `small_graph_model` and solved exactly when supported.
+2. A **continent / large battle graph** is a larger active combat structure
+   handled by `continent_model`. In some transition code, a variable named
+   `full_graph` means the complete context for one continent transition, not the
+   42-territory world.
+3. The **full board** spans continents and alternating player turns. It adds
+   reinforcement, redistribution, fortification, shared frontiers, competing
+   objectives and multi-turn coordination.
+
+The active battle graph is the boundary between the board-scale context and
+tactical calculation. It normalizes players to attacker and defender roles while
+retaining topology, ownership, troop counts and a mapping back to the larger
+state.
+
+---
+
+## 2. Strategic objective and interface contracts
+
+The architecture distinguishes transition generation from outcome evaluation.
+
+The transition contract is:
+
+\[
+P(S' \mid S,\pi),
+\]
+
+where (S) is the current state, (pi) is a tactical or strategic policy and
+(S') is a concrete successor state.
+
+The evaluation contract is:
+
+\[
+U(S'),
+\]
+
+which scores a compatible outcome independently of the mechanism that produced
+it.
+
+This separation is implemented at several levels.
+
+- The small-graph solver uses a context-independent local objective so its
+  results can be reused.
+- Large-graph layers retain concrete successor distributions so later context
+  can distinguish locally tied policies.
+- The full-board layer chains transitions while managing player and resource
+  mechanics.
+- The strategic-evaluation layer applies terminal utility and compares
+  commitment profiles.
+
+The architectural interface between layers is therefore not merely a scalar
+value. Wherever downstream actions depend on node identity, troop placement or
+joint stochastic outcomes, the interface must preserve a distribution over
+concrete states.
+
+---
+
+## 3. Small-graph model
+
+The small-graph layer is the exact tactical core. It combines a stochastic
+node-to-node combat kernel with sequential policy optimization over a finite
+combat graph.
+
+### 3.1 Elementary combat kernel
+
+The lowest stochastic component is implemented primarily in
+`markov_matrix_probabilities.py`.
+
+Under a fixed combat policy, one attacker-controlled node and one
+defender-controlled node form a finite absorbing Markov chain. With the
+transition matrix in canonical form,
+
+\[
+P =
+\begin{bmatrix}
+Q & R \\
+0 & I
+\end{bmatrix},
+\]
+
+the fundamental matrix and absorption probabilities are
+
+\[
+N=(I-Q)^{-1},
+\qquad
+F=NR.
+\]
+
+A row of (F) gives the complete probability distribution over terminal troop
+configurations for the battle.
+
+The combat kernel answers:
 
 > What may happen if this battle is fought?
 
-The graph solver answers:
+It intentionally does not decide which battle should be selected. Combat is
+assumed to continue until the defender is eliminated or the attacker can no
+longer continue, using the maximum number of dice permitted by the model. These
+assumptions reduce the elementary action space; they are not a claim about
+globally optimal full-board behaviour.
 
-> Which battle should be fought?
+### 3.2 Sequential exact policy solving
 
----
-
-## 5. Exact tactical modelling on small graphs
-
-Once several hostile edges exist, selecting an attack becomes a sequential
+When several hostile edges are available, attack selection becomes a sequential
 decision problem.
 
-The main semantic implementation is contained in:
+`small_graph_outcome_probabilities.py` defines the principal state, action,
+terminal and utility semantics. `exact_finite_solver.py` provides the compact,
+more computationally efficient implementation.
 
-`small_graph_outcome_probabilities.py`
-
-with the more computationally efficient exact implementation in:
-
-`exact_finite_solver.py`
-
-A local state contains the ownership and troop count of every node in the combat
-graph.
-
-From each state the solver:
+For each reachable state, the solver:
 
 1. identifies legal attacks;
-2. evaluates the complete Markov distribution for each battle;
-3. constructs every reachable successor graph state;
-4. evaluates future optimal actions recursively;
-5. propagates terminal values backwards;
-6. selects the policy or policies with optimal expected utility.
+2. obtains the complete combat distribution for each attack;
+3. constructs successor graph states;
+4. evaluates future optimal actions;
+5. propagates terminal values backwards; and
+6. retains the optimal policy or tied policy alternatives.
 
-Because the same state may be reached through several battle sequences, the
-computation is represented internally as a finite state DAG rather than as a
-fully duplicated game tree.
+The recursion is Bellman-like:
 
-Memoization allows those shared subproblems to be solved once.
+\[
+V(s)=
+\max_{a\in A(s)}
+\sum_{s'} P(s'\mid s,a)V(s').
+\]
 
-The local objective is normally evaluated lexicographically as:
+Many battle sequences arrive at the same ownership-and-troop configuration.
+The reachable process is therefore represented as a finite state DAG rather than
+a fully duplicated game tree. Memoization and shared caches solve repeated
+continuations once.
+
+The local objective is normally lexicographic:
 
 \[
 \left(
@@ -309,59 +288,36 @@ P(\text{local conquest})
 \right).
 \]
 
-This produces two related outputs:
+The output consists of both an optimal value and a joint probability
+distribution over concrete terminal graph states.
 
-- an optimal value;
-- a probability distribution over concrete terminal graph states.
+### 3.3 Policy representation
 
-The distinction between them is important for the architecture. Higher layers
-generally need the terminal distribution, not merely the value.
+Several policy representations coexist because equal local values do not imply
+equal successor distributions.
 
----
+#### Single canonical policy
 
-## 6. Policy representation
+A deterministic reference continuation selects one stable optimal action at
+each state. This is sufficient when only one local value or reference solution
+is required.
 
-The representation of an optimal solution has changed significantly during the
-project.
+#### Root policy alternatives
 
-A simple solver can choose one optimal action and discard all alternatives.
-That is sufficient if the only downstream object is the local expected value.
+Later implementations retained different optimal actions at the initial state,
+each with its own terminal distribution.
 
-Project Risk increasingly required more information.
+#### `state_set` alternatives
 
-Two locally equal policies can generate different troop placements and therefore
-different future borders. Consequently, several generations of policy
-representation were developed.
+Root alternatives are not sufficient when two complete policies share the same
+opening action but differ after a later stochastic outcome. `state_set`
+representations retain alternatives that diverge deeper in the reachable state
+graph.
 
-### Single canonical policy
+#### Exact policy DAG
 
-The simplest representation selects one deterministic optimal continuation.
-
-This remains useful as a stable reference solution.
-
-### Root policy alternatives
-
-Later versions retained multiple optimal choices at the initial decision point.
-
-Each root policy option could therefore have its own successor-state
-distribution.
-
-### `state_set` policy alternatives
-
-Root alternatives were eventually found to be insufficient.
-
-Two complete policies may share the same opening action but differ after some
-later stochastic outcome.
-
-`state_set` representations therefore allow alternatives to differ in downstream
-decision states as well.
-
-### Exact policy DAG
-
-`exact_policy_dag.py` provides a fuller representation of the optimal decision
-structure and has mainly been used for validation and research into policy ties.
-
-It makes explicit that:
+`exact_policy_dag.py` exposes tied optimal choices at several depths and is used
+mainly for validation and policy-identity research. It makes explicit that
 
 \[
 V(\pi_1)=V(\pi_2)
@@ -370,75 +326,94 @@ V(\pi_1)=V(\pi_2)
 does not imply
 
 \[
-P(S'|\pi_1)=P(S'|\pi_2).
+P(S'\mid\pi_1)=P(S'\mid\pi_2).
 \]
 
-This distinction is important for regional composition, training-data generation
-and any later decision stage consuming the distribution.
+This distinction affects library payloads, regional policy composition and
+training-label semantics.
 
----
+### 3.4 Troop-count scaling
 
-## 7. Canonical graph representation
+High troop counts on a fixed small topology were initially handled through
+plateau extrapolation. The hypothesis was that optimal policies might stabilize
+above some troop threshold, allowing lower-count solutions to be reused.
 
-The exact solver would be far less useful if every labelled version of a graph
-had to be solved independently.
+Stable action availability did not guarantee a stable full policy. Topology,
+post-conquest movement, newly opened fronts and later stochastic outcomes could
+change the optimal continuation even when an opening action appeared stable.
 
-A major optimization therefore occurs before policy computation:
-**role-preserving graph canonicalization**.
+The plateau architecture predates the practical use of memoization and dynamic
+programming for this problem. The later compact solver introduced reusable state
+caches, compact encoding, precomputed graph and combat information, and a
+separation between value solving and terminal-distribution reconstruction.
 
-Suppose two local battle graphs have the same topology but different node
-labels.
-
-If attacker nodes are permuted only among attacker nodes and defender nodes only
-among defender nodes, the underlying tactical problem may be identical.
-
-The system maps equivalent labelled graphs to a canonical topology.
-
-Conceptually:
+The resulting architecture is:
 
 ```text
-labelled battle graph
+historical explicit calculation
         ↓
-all role-preserving relabellings
+plateau approximation above the tractable range
         ↓
-canonical topology
+memoized dynamic programming
         ↓
-solve / library lookup once
+compact exact finite solver
+        ↓
+direct exact support for the intended troop caps
 ```
 
-The mapping between canonical local nodes and original global nodes is retained
-so that retrieved policies can later be translated back into the board
-simulation.
-
-Canonicalization therefore has several architectural roles:
-
-- reduces the number of graph topologies that require exact computation;
-- creates stable identities for library files;
-- allows solutions to be reused across differently labelled board positions;
-- provides a compatibility contract between library construction and runtime
-  lookup.
-
-Because of that final role, canonicalization is not merely an optimization.
-Changing its semantics requires coordinated changes to existing libraries and
-their consumers.
+`create_library.py` and `library_io.py` retain limited historical plateau and
+format-compatibility paths, but direct exact construction is the preferred
+small-graph route.
 
 ---
 
-## 8. Offline exact policy-library generation
+## 4. Exact policy libraries
 
-The exact small-graph solver is connected to the larger model primarily through
-the generated policy libraries.
+The library layer amortizes the cost of exact small-graph optimization. It is
+the principal interface between exact local solving and repeated use inside the
+large-graph model.
 
-The central generation module is:
+The library concept predates `exact_finite_solver.py`. Earlier libraries were
+built from earlier small-graph implementations; improved solvers later expanded
+topology coverage, troop caps and policy richness without changing the basic
+precompute-and-query architecture.
 
-`create_library.py`
+### 4.1 Role-preserving canonicalization
 
-The underlying idea is amortization.
+Differently labelled graphs may represent the same tactical problem. The system
+therefore canonicalizes graphs under permutations that preserve attacker and
+defender roles.
 
-Instead of repeatedly solving the same tactical problem during game simulation,
-the system solves all supported small configurations offline.
+```text
+labelled local graph
+        ↓
+role-preserving relabellings
+        ↓
+canonical topology and node mapping
+        ↓
+solve or query once
+```
 
-For a given attacker/defender node pattern and troop cap, the builder:
+The canonical topology becomes the library identity. The canonical-to-global
+mapping is retained so retrieved policies and successor states can be interpreted
+in the original larger graph.
+
+Canonicalization:
+
+- reduces duplicate exact calculation;
+- creates stable graph-library identities;
+- allows reuse across concrete board labels; and
+- forms a compatibility contract between library construction and runtime
+  lookup.
+
+Changing its semantics therefore requires coordinated changes to generated
+libraries and their consumers.
+
+### 4.2 Offline generation
+
+`create_library.py` is the central library builder.
+
+For a supported attacker/defender pattern and troop cap, it:
 
 ```text
 enumerates graph topologies
@@ -451,73 +426,38 @@ solves each initial state exactly
         ↓
 retains policy-specific terminal distributions
         ↓
-serializes the results into the library
+serializes graph indexes and row chunks
 ```
 
-For each canonical topology, one `CompactExactTopologySolver` can reuse its
-dynamic-programming caches across many initial troop configurations.
-
-This is a major computational advantage because nearby initial states share a
-large number of reachable successor states.
-
-The expected number of initial rows for one topology is approximately
+For one canonical topology, a `CompactExactTopologySolver` can reuse its
+dynamic-programming caches across many initial troop configurations. The
+approximate number of initial rows for a topology is
 
 \[
 \text{maxA}^{n_A}\text{maxD}^{n_D}.
 \]
 
-The graph topology itself adds another combinatorial dimension, making graph
-canonicalization and shared caches essential.
+Graph topology adds a separate combinatorial dimension. Parallel generation is
+therefore performed mainly across topologies so each worker can retain the value
+of its local solver cache.
 
-Parallel library construction is performed primarily across topologies rather
-than across individual rows so that each worker can retain the value of its local
-solver cache.
+### 4.3 Policy-aware row representation
 
----
+The library is not a cache of scalar values. A row can contain one or more
+policy-specific terminal distributions.
 
-## 9. Evolution of the library representation
-
-The library infrastructure has itself undergone several generations of
-development.
-
-This matters because the library is not simply a cache of scalar results. It is
-a representation of tactical policy information intended for repeated use by
-higher modelling layers.
-
-Earlier implementations relied more heavily on explicit matrices, DataFrames,
-verbose dictionaries and labelled outcome structures.
-
-As library coverage expanded, these representations became increasingly
-expensive.
-
-The newer V2 representation stores aligned numerical arrays for each successor
-distribution.
-
-A typical row contains arrays describing:
+Later V2 payloads use aligned numerical arrays describing:
 
 - outcome probabilities;
-- node owners;
-- node troop counts;
+- terminal owners;
+- terminal troop counts;
 - cumulative probabilities for sampling;
-- number of newly conquered territories;
-- final attacker troop count;
+- newly conquered territories;
+- final attacker troops; and
 - local conquest indicators.
 
-The probability vector can be viewed schematically as
-
-\[
-p=(p_1,\ldots,p_k),
-\]
-
-while ownership and troop arrays contain the corresponding concrete terminal
-states.
-
-This has several advantages.
-
-The data become more compact, vector operations become cheaper, and downstream
-code can calculate expected quantities directly from the stored arrays.
-
-For example,
+For probabilities (p=(p_1,\ldots,p_k)), expected derived values can be
+calculated directly, for example
 
 \[
 E[\text{new territories}]
@@ -525,27 +465,23 @@ E[\text{new territories}]
 \sum_i p_i n_i.
 \]
 
-Multiple tied policy alternatives can be stored under the same initial row, with
-each option retaining a complete independently sampleable distribution.
+Multiple tied policies can be stored under one initial state while each remains
+independently sampleable and retains its own joint successor distribution.
 
----
+Earlier matrices, DataFrames, dictionaries and labelled outcome structures were
+more verbose. Compact aligned payloads shifted the main bottleneck from exact
+calculation toward representation, storage and lookup.
 
-## 10. Chunked library storage and indexed lookup
+### 4.4 Chunked storage and indexed lookup
 
-As the number of solved states grew into the millions, storing an entire graph
-library as one large Python object became impractical.
-
-The current library design therefore separates a small graph-level index from
-the actual row data.
-
-A simplified structure is:
+Millions of solved rows cannot be loaded efficiently as one Python object. The
+current format separates a graph-level index from row chunks:
 
 ```text
 graph library
 │
-├── graph metadata
-├── canonical topology
-├── build / policy metadata
+├── canonical topology and graph metadata
+├── build and policy metadata
 ├── row → chunk index
 │
 └── row chunks
@@ -554,107 +490,108 @@ graph library
      └── ...
 ```
 
-Each graph-level object tells the runtime reader which chunk contains a requested
-troop configuration.
-
-Only that chunk needs to be loaded.
-
-The principal format-aware reader is:
-
-`library_io.py`
-
-It resolves the graph descriptor, finds the requested row, loads the correct
-chunk and normalizes single-policy and multi-policy payloads to one downstream
-interface.
+`library_io.py` is the format-aware data boundary. It resolves the graph
+descriptor, locates the requested row, loads the correct chunk and normalizes
+single-policy and multi-policy payloads to one downstream interface.
 
 `ChunkCache` and the higher-level regional query cache reduce repeated disk
 access during ranking operations.
 
-This architecture became necessary because the generated libraries grew very
-large. At the inspected research snapshot, the principal library directories
-together occupied roughly 19 GiB.
+One recorded `2A3D` build covered 98 canonical topologies and 1,647,086 troop
+configurations. At the inspected research snapshot, the principal library
+directories together occupied roughly 19 GiB. These generated artifacts are not
+part of the public repository.
 
-The size is a consequence not merely of graph count but of increasing richness
-in what is stored: troop configurations, terminal distributions and multiple
-policy alternatives.
+### 4.5 Runtime lookup
 
----
-
-## 11. Runtime policy lookup
-
-The purpose of the exact policy libraries is realized at runtime.
-
-For a region extracted from the board,
-`approximate_graph_outcome_probabilities.py` performs the domain-to-library
-translation.
-
-The main query path is conceptually:
+The runtime route is separate from offline generation:
 
 ```text
-global board region
+large-state region
         ↓
-normalize players → A / D
+normalize players to A / D
         ↓
 remove irrelevant local nodes
         ↓
-determine attacker/defender pattern
+select attacker/defender pattern and troop-cap library
         ↓
-select sufficient troop-cap library
+canonicalize topology and retain global mapping
         ↓
-canonicalize local topology
-        ↓
-retain canonical ↔ global mapping
-        ↓
-locate graph library
-        ↓
-encode troop row
-        ↓
-load row chunk
+library_io.py resolves graph, row and chunk
         ↓
 recover one or more policy distributions
+        ↓
+map outcomes back to the larger state
 ```
 
-The runtime policy query is therefore much cheaper than performing the underlying
-dynamic programming again.
+`approximate_graph_outcome_probabilities.py` is the principal domain-to-library
+adapter. It extracts candidate regions, normalizes roles, retains node mappings
+and issues the library queries consumed by large-graph ranking.
 
-This is the intended connection between exact computation and the live game
-simulation.
+`create_library.py` does not sit on this runtime lookup path. It produces the
+artifacts that `library_io.py` later consumes.
 
-The policy returned from the library is still expressed in terms of the
-canonical local graph, so the retained node mapping is used to interpret the
-result in the original board state.
+### 4.6 Restricted graph families
+
+Coverage depends on topology as well as node count. Some attacker/defender count
+patterns are expensive to enumerate generally even though restricted structures
+within them are tractable.
+
+Star-topology libraries extend exact coverage for such special cases. Their
+constrained edge structure avoids enumerating every topology of the same size.
+These libraries support both runtime edge cases and broader training-data
+coverage for unbalanced attacker/defender configurations.
 
 ---
 
-## 12. Large-graph regional architecture
+## 5. Continent / large-graph model
 
-When an active battle graph exceeds the library-supported exact region size, the
-implemented production-like system attempts to cover it using smaller supported
-regions.
+The large-graph layer addresses growth in the number of interacting nodes. Its
+historical backbone is regional decomposition; its current research direction
+adds empirical exact routing and explicit coupling checks before decomposition.
 
-The two central modules are:
+The central implemented modules are:
 
-- `approximate_graph_outcome_probabilities.py`
-- `battle_graph_ranking.py`
+- `approximate_graph_outcome_probabilities.py`; and
+- `battle_graph_ranking.py`.
 
-The first establishes which local regions can be represented by the libraries.
+### 5.1 From a larger state to an active battle graph
 
-The second treats those region solutions as candidates for a larger tactical
-decision.
+Most tactical calculations do not require every full-board node. The system
+extracts an active battle graph containing attacker- and defender-controlled
+nodes participating in the current combat process.
 
-The implemented flow is approximately:
+The graph retains:
+
+- topology;
+- normalized attacker/defender ownership;
+- troop counts; and
+- mappings to the original larger-state nodes.
+
+This mapping allows canonical local outcomes to be translated back into
+concrete state transitions.
+
+### 5.2 Supported partitions and regional policies
+
+For graphs beyond one supported library region, the implemented route generates
+candidate connected regions subject to attacker/defender composition and
+library coverage.
+
+A valid partition covers the relevant node universe with disjoint supported
+regions. Each region is canonicalized and queried, potentially producing
+several tied policy distributions.
 
 ```mermaid
 flowchart TD
-    G["Full battle graph"]
-    P["Generate supported covers / partitions"]
+    G["Large active battle graph"]
+    P["Generate supported partitions"]
     Q["Query exact regional policy libraries"]
-    O["Retain regional policy options"]
+    O["Retain regional policy alternatives"]
     C["Construct partition-policy combinations"]
     U["Compare compounded local utility"]
-    T["Retain optimal / tied candidates"]
-    M["Second-wave Monte Carlo"]
-    S["Global successor-state evaluation"]
+    T["Retain optimal or tied candidates"]
+    L["Downstream look-ahead"]
+    S["Large successor-state distribution"]
 
     G --> P
     P --> Q
@@ -662,318 +599,112 @@ flowchart TD
     O --> C
     C --> U
     U --> T
-    T --> M
-    M --> S
+    T --> L
+    L --> S
 ```
 
-A partition may contain several regions, and each region may itself contain
-several equally valued local policies.
+The ranking problem therefore ranges over both partition identity and policy
+identity.
 
-The ranking system therefore has to reason not just over partitions, but over
-**partition-policy combinations**.
+### 5.3 Second-wave look-ahead and re-partitioning
 
-This is one reason why preserving policy identity in the libraries became
-important.
+The first regional wave cannot always distinguish locally tied candidates.
+For each retained partition-policy combination, the second stage samples one
+concrete outcome from each regional distribution and overlays the results on the
+large state.
 
----
-
-## 13. Preference for larger exact regions
-
-A naive regional model could artificially improve its estimated utility by
-splitting a graph into many small regions.
-
-Smaller regions ignore more interaction between nodes and therefore often make
-the local optimization problem easier.
-
-But this may reduce the fidelity of the approximation.
-
-The regional architecture consequently introduced a hierarchy:
-
-> if several smaller regions can be replaced by one larger region for which an
-> exact solution exists, the larger exact region is preferred.
-
-This principle can be seen as an early version of the later exact-first logic.
-
-It prioritizes preserving tactical dependence over maximizing the apparent
-benefit of a finer decomposition.
-
-The system therefore distinguishes between **coverage** and **preferred
-coverage**. It is not enough that a graph can be partitioned into supported
-library regions; redundant fine partitions should be removed when a more
-informative exact representation exists.
-
----
-
-## 14. Second-wave policy evaluation
-
-The local library objective cannot always distinguish policies that matter
-globally.
-
-Suppose two regional policies have the same local value but produce different
-terminal troop placements.
-
-The first-stage ranking therefore retains such ties.
-
-For each remaining partition-policy candidate, the second stage samples a
-terminal outcome from each regional distribution and overlays those outcomes on
-the full graph.
-
-This creates a simulated successor board state.
-
-The battle graph is then reconstructed and optimized again.
-
-Repeated sampling estimates the expected value of the **next tactical wave**.
-
-Conceptually:
+The sampled successor is treated as a new large-graph state:
 
 ```text
 candidate regional policies
         ↓
-sample regional terminal states
+sample concrete regional outcomes
         ↓
-construct full successor board
+construct large successor state
         ↓
-redraw active battle graph
+rebuild active battle graph
         ↓
-optimize next wave
+generate a new partition
         ↓
-estimate downstream candidate value
+optimize the next tactical wave
 ```
 
-This mechanism attempts to recover part of the strategic context that is absent
-from the isolated local objectives.
+Region boundaries are redrawn after every sampled transition. A conquest can
+place previously separate nodes in one new region, split an old region or remove
+an interaction entirely. Monte Carlo repetition estimates the downstream value
+of the original candidate.
 
-`battle_graph_ranking.py` is the main consumer of the library distributions in
-this process.
+### 5.4 Preference for larger exact regions
 
----
+Fine partitions remove more interaction before policies are compared. When the
+same node universe can be represented by a coarser exact-supported partition,
+the finer representation has no precision advantage.
 
-## 15. Machine-learning and data-generation branches
+Candidate preparation therefore applies a maximal-supported principle. A finer
+partition is dominated when:
 
-The modelling system has also used the simulation and regional-policy
-infrastructure to generate data for learned approximations.
+1. a strict exact coarsening covers the same node universe;
+2. the coarsening uses fewer regions; and
+3. every region in the finer partition is contained in a region of the
+   coarsening.
 
-The main dependency is not typically:
+Dominated fine partitions are removed before later utility comparison.
+
+This is stronger than a small ranking preference. It makes preservation of
+exact coupling part of the representation contract.
+
+### 5.5 Composition versus decomposition
+
+Regional modelling contains two independent approximation questions.
+
+**Composition** asks how several known regional distributions should be combined
+into a larger successor distribution.
+
+**Decomposition** asks whether those regions could validly be treated as
+separate stochastic components.
+
+Exact Cartesian composition can be cheap once regional distributions are known.
+Sampling that same product with Monte Carlo may add cost and noise. Monte Carlo
+remains useful for downstream look-ahead when many concrete successors must be
+rebuilt, repartitioned and evaluated.
+
+Exact composition does not validate decomposition. If success in one region
+opens an action into another, or stopping in one branch changes available forces
+elsewhere, the true process contains dependencies absent from the factorized
+model.
+
+### 5.6 Validation and exact tractability
+
+Regional approximations were compared with full exact reference distributions.
+
+- Across nine weakly connected bridge cases, mean total-variation distance was
+  approximately `0.0061`.
+- Across ten strongly coupled double-front cases, mean total-variation distance
+  was approximately `0.798`, with several cases at total variation one.
+- More exact candidate ranking changed some selections but did not remove the
+  severe double-front failures.
+
+The failures were structural: improving ranking cannot restore dependencies
+discarded during decomposition.
+
+At the same time, improved exact solving showed that some graphs previously
+routed toward approximation were directly tractable. One study completed all
+360 tested cases over six- to eight-node graphs and troop caps three to five
+within its resource budget, with the worst recorded runtime below one second. A
+broader 315-cell experiment completed 311 cells under a ten-second stop.
+
+The architectural question therefore changed from “how should this large graph
+be approximated?” to “is approximation necessary for this graph at all?”
+
+### 5.7 Implemented route and exact-first target
+
+The mature offline and implemented runtime routes are distinct.
 
 ```text
-ML → raw library
-```
+OFFLINE EXACT GENERATION
 
-but rather:
-
-```text
-generate_data_ML
-        ↓
-battle_graph_ranking
-        ↓
-approximate_graph_outcome_probabilities
-        ↓
-library query
-        ↓
-selected policy / successor distribution
-        ↓
-training example
-```
-
-`generate_data_ML.py` has therefore acted as an important bridge between the
-strategy solver and several generations of machine-learning experiments.
-
-Historical and experimental downstream components include:
-
-`train_ML.py`
-
-`predict_future_states_ML.py`
-
-`transition_distribution_stage_a_v2.py`
-
-`transition_distribution_stage_a_v3.py`
-
-and the board-level ML simulation route.
-
-These branches have served different targets over time.
-
-The earlier node-level models attempted to predict final ownership and troop
-outcomes separately for individual nodes.
-
-Later transition-distribution work instead moved toward complete successor-state
-signatures.
-
-The public source groups these modules under
-`mathematical/transition_prediction_ml/`. They model primarily one active-player
-combat transition at continent scale. `transition_distribution_ML.py` contains
-the experimental joint-state KNN training/inference implementation. Stage A v2
-and v3 construct and calibrate one-transition targets; they are not deployed
-inference models. `predict_future_states_ML.py` is mostly reusable transition
-glue but also retains a legacy continent-scoped multi-turn helper.
-
-This one-transition problem is approximately
-`P(S' | S, active-player combat transition / policy)`. The separate
-`full_board_model/` layer chains Player 1, Player 2, Player 1, and later turns
-while applying full-board resource mechanics. Transition prediction and
-multi-turn rollout are therefore different architectural responsibilities.
-
-The ML layer should therefore be understood as an alternative large-transition
-representation built on data generated by the strategy/simulation
-infrastructure, not as a replacement for the elementary combat and graph
-semantics.
-
----
-
-## 16. Historical statistical modelling layer
-
-Before the node-level ML architecture, macro-statistical experiments treated
-strategic board descriptors as predictors of later outcomes.
-
-These experiments used variables describing:
-
-- troop and territory balance;
-- troop concentration;
-- graph topology;
-- active-force deployment;
-- reserves and distance to the battle front.
-
-Methods included regression, GLMs and spline-based GAMs.
-
-Most of this subsystem no longer sits on the active runtime path.
-
-Its architectural legacy is nonetheless visible in later data-generation and ML
-components because many of the state descriptors developed during this phase
-became model features.
-
-The statistical phase is therefore best viewed as an earlier implementation of
-the **large-state transition layer**.
-
-It attempted to replace explicit tactical state propagation with a lower-
-dimensional predictive representation.
-
----
-
-## 17. Plateau and extrapolation layer
-
-The repository also retains parts of an earlier library-generation architecture
-based on plateau extrapolation.
-
-The idea was to solve lower troop-count configurations exactly and extend the
-library beyond that range where policy behaviour appeared sufficiently stable.
-
-`create_library.py` still contains some of this earlier builder infrastructure,
-and `library_io.py` retains limited compatibility logic for historical
-artifacts.
-
-This approach is no longer the preferred library-generation method.
-
-The current exact finite builder instead attempts to solve the supported troop
-range directly.
-
-The coexistence of these implementations is one example of how the research
-architecture evolved incrementally rather than being redesigned from scratch
-after each modelling change.
-
----
-
-## 18. Validation architecture
-
-Validation is not one terminal test at the end of the system.
-
-Because Project Risk contains several layers of approximation and data
-representation, validation has been implemented at corresponding levels.
-
-### Combat kernel
-
-Checks probability tables and normalization.
-
-### Exact finite solver
-
-Compares the compact solver against the older reference recursion.
-
-### Library construction
-
-Builds small isolated libraries and verifies row coverage, schema consistency,
-probability mass and agreement with direct exact computation.
-
-Relevant components include:
-
-`validate_exact_finite_library_builder.py`
-
-`check_exact_finite_library_contents.py`
-
-`verify_state_set_cap7_full_library.py`
-
-### Policy representation
-
-`exact_policy_dag.py` and related validation examine whether alternative tied
-policies change value or successor distributions.
-
-### Regional approximation
-
-`regional_compounding_validation.py`
-
-and
-
-`regional_compounding_validation_v2.py`
-
-compare library-backed regional approximations against full exact reference
-solutions.
-
-### Training pipeline
-
-`preflight_checks_training.py` verifies library coverage and selected artifacts
-before expensive data-generation or training runs.
-
-This layered structure reflects an important property of the model:
-correctness at one level does not guarantee correctness at the next.
-
-An exact regional policy, for example, can still participate in an inaccurate
-full-graph decomposition.
-
----
-
-## 19. The implemented research route
-
-The most complete production-like route currently represented in the research
-archive is approximately:
-
-```mermaid
-flowchart TD
-    B["Board / player state"]
-    G["Extract battle graph"]
-    P["Generate supported regional partitions"]
-    L["Query exact policy libraries"]
-    O["Retain policy options"]
-    R["Rank partition-policy candidates"]
-    W["Second-wave evaluation"]
-    D["Selected successor distribution"]
-    N["Simulation / data generation / next turn"]
-
-    B --> G
-    G --> P
-    P --> L
-    L --> O
-    O --> R
-    R --> W
-    W --> D
-    D --> N
-```
-
-The associated principal module chain is approximately:
-
-```text
-Board / simulation
-    ↓
-approximate_graph_outcome_probabilities.py
-    ↓
-create_library.py + library_io.py
-    ↓
-battle_graph_ranking.py
-    ↓
-simulation / generate_data_ML.py / transition experiments
-```
-
-The exact solver sits upstream of this route:
-
-```text
 markov_matrix_probabilities.py
-        +
+        ↓
 small_graph_outcome_probabilities.py
         ↓
 exact_finite_solver.py
@@ -983,44 +714,38 @@ create_library.py
 generated exact policy libraries
 ```
 
-This distinction between **offline exact solution generation** and **runtime
-policy consumption** is central to the architecture.
+```text
+IMPLEMENTED LIBRARY-BACKED RUNTIME
 
----
+large state / active battle graph
+        ↓
+approximate_graph_outcome_probabilities.py
+        ↓
+library_io.py
+        ↓
+battle_graph_ranking.py
+        ↓
+selected successor distribution
+        ↓
+simulation, data generation or later transition layer
+```
 
-## 20. The emerging exact-first architecture
-
-Validation of the regional system showed that the original routing assumption
-was too aggressive.
-
-Large graphs were often sent toward decomposition because combinatorial upper
-bounds suggested that full exact solving would be impractical.
-
-Empirical tests later showed that many such graphs were still cheap enough to
-solve exactly.
-
-At the same time, regional validation showed that independence assumptions could
-fail severely in strongly coupled graph structures.
-
-The preferred future architecture therefore changes the order of operations.
+Validation supports a revised target router:
 
 ```mermaid
 flowchart TD
     G["Active combat graph"]
     F{"Full exact within empirical budget?"}
-
     X["Solve full graph exactly"]
 
-    C{"Can strongly coupled structure<br/>be retained in an exact macro-region?"}
+    C{"Can strongly coupled structure<br/>be retained in an exact region?"}
     M["Solve coupled macro-region exactly"]
 
     W{"Remaining regions sufficiently<br/>weakly coupled?"}
-    R["Exact regional library solves<br/>+ exact composition"]
+    R["Exact regional policies<br/>+ exact composition"]
 
     A["Bounded joint-state approximation"]
-
-    J["Policy-aware joint successor-state distribution"]
-    B["Return to board simulation"]
+    J["Policy-aware joint successor distribution"]
 
     G --> F
     F -- Yes --> X
@@ -1034,86 +759,389 @@ flowchart TD
     M --> J
     R --> J
     A --> J
-    J --> B
 ```
 
-This router is a modelling direction supported by validation rather than one
-fully integrated runtime implementation.
-
-Several components remain open, particularly a general method for identifying
-the smallest sufficient coupled macro-region.
-
-The importance of the architecture is therefore its ordering:
+The ordering is:
 
 **preserve exactness first, preserve coupling second, approximate only when
 necessary.**
 
+This router is a modelling direction supported by validation, not a fully
+integrated runtime. A general method for identifying the smallest sufficient
+coupled region remains open.
+
 ---
 
-## 21. Major module map
+## 6. Transition prediction and machine learning
 
-| Layer | Principal modules | Architectural role |
+The transition-prediction layer is a surrogate branch of the expensive
+large-graph process. Its target is approximately
+
+\[
+P(S'\mid S,\text{active-player transition or policy}).
+\]
+
+It primarily models one continent-scale active-player combat transition. The
+separate `full_board_model` layer chains those transitions across players and
+applies full-board resource mechanics.
+
+### 6.1 Data-generation dependency
+
+The principal dependency is:
+
+```text
+initial large-graph state
+        ↓
+generate_data_ML.py
+        ↓
+battle_graph_ranking.py
+        ↓
+approximate_graph_outcome_probabilities.py
+        ↓
+library_io.py and exact policy artifacts
+        ↓
+selected policy / successor distribution
+        ↓
+supervised transition target
+```
+
+The learned model does not bypass the underlying graph and combat semantics. It
+learns from targets produced by a particular version of the strategy pipeline.
+The validity of that target generator is therefore part of the model's validity.
+
+### 6.2 Macro statistical surrogate
+
+The earliest surrogate compressed large states into strategic descriptors such
+as:
+
+- troop and territory balance;
+- troop concentration;
+- graph topology;
+- active-force deployment; and
+- reserves and distance to the battle front.
+
+Regression, GLMs and spline-based GAMs captured broad outcome relationships.
+Their architectural limitation was the output representation: a conditional
+expectation over compressed descriptors could not reconstruct a concrete legal
+successor state for recursive simulation.
+
+The feature engineering and simulation-to-data infrastructure remained useful
+for later models.
+
+### 6.3 Node-level Random Forest surrogate
+
+The next route generated concrete `GlobalState` successors and converted them
+into node-level labels. Global statistical descriptors were combined with local
+features such as initial owner, troop count, neighbouring ownership and frontier
+position.
+
+`train_ML.py` trained Random Forest classifiers and regressors. Historical
+continent-specific models achieved strong predictive metrics relative to their
+labels.
+
+Those labels inherited weaknesses from the generator version used at the time:
+
+- older small-graph objectives;
+- plateau approximation at higher troop counts;
+- unvalidated regional decomposition;
+- incomplete coverage of unbalanced attacker/defender patterns; and
+- row-level evaluation splits that could overstate scenario-level
+  generalization.
+
+The model therefore demonstrated high predictive agreement with generated
+targets, while the strategic validity of those targets remained uncertain.
+
+`predict_future_states_ML.py` contains reusable transition glue and a retained
+legacy continent-scoped multi-turn helper.
+
+### 6.4 Joint successor-state model
+
+Independent node marginals can combine outcomes from mutually exclusive paths
+and therefore fail to represent one legal board. Later work moved toward complete
+successor signatures.
+
+`transition_distribution_ML.py` contains the experimental joint-state
+retrieval/KNN training and inference implementation. Complete signatures retain
+correlated ownership and troop outcomes because all nodes come from one realized
+transition.
+
+`transition_distribution_stage_a_v2.py` and
+`transition_distribution_stage_a_v3.py` construct and calibrate one-transition
+target distributions. They are target-generation infrastructure, not deployed
+inference models.
+
+The intended future dependency is:
+
+```text
+validated large-graph hybrid generator
+        ↓
+policy-aware joint successor targets
+        ↓
+joint-state surrogate
+        ↓
+sampleable coherent transition distribution
+```
+
+The surrogate should be rebuilt only after exact routing, coupled-region logic
+and tied-policy target semantics are sufficiently stable.
+
+---
+
+## 7. Full-board multi-turn model
+
+The mathematical full-board layer is under
+`src/project_risk/mathematical/full_board_model/`.
+
+A one-transition continent model primarily describes active combat. A complete
+turn also requires:
+
+- reinforcement allocation;
+- troop redistribution and fortification;
+- competing continent objectives;
+- shared frontier nodes;
+- alternating player perspectives; and
+- resource coupling between simultaneous strategic commitments.
+
+These mechanics form a separate approximation and orchestration layer around
+the learned or otherwise generated combat transition.
+
+### 7.1 State and orchestration boundary
+
+The main mathematical state is `GlobalState`. Some graph builders temporarily
+synchronize a compatible mutable `Board`, but mathematical rollouts do not
+delegate turns to `SimulationEngine`.
+
+Principal modules include:
+
+- `full_board_state_generators.py`;
+- `full_board_simulation_GT.py`;
+- `full_board_simulation_ML.py`; and
+- `strategy_policy_gt.py`.
+
+`strategy_policy_gt.py` supplies experimental commitment, reinforcement split,
+shared-frontier and fortification mechanics.
+
+### 7.2 Historical RF-based rollout
+
+The first operational multi-turn route used historical node-level Random Forest
+transitions. It demonstrated the architecture:
+
+```text
+state at turn t
+        ↓
+active player transition
+        ↓
+resource and board update
+        ↓
+next player perspective
+        ↓
+state at turn t+1
+```
+
+This route inherited the target-generator and node-independence limitations of
+the RF model. Repeated rollout can accumulate rather than remove those errors.
+
+`full_board_simulation_GT.py` currently uses this older learned transition
+route. Despite its name, it is a commitment-conditioned cross-scale rollout, not
+a general game-theory or equilibrium solver.
+
+### 7.3 Joint-state particle direction
+
+`full_board_simulation_ML.py` retains both a historical deterministic
+node-marginal route and a later joint-state particle route.
+
+The particle architecture maintains a bounded collection of coherent board
+states, samples or weights successors, merges equivalent states where useful
+and continues through alternating turns. It propagates uncertainty as a
+distribution over complete boards instead of collapsing it into independent
+expected node values.
+
+This route remains experimental because its transition targets depend on the
+large-graph generator currently being revised.
+
+### 7.4 Current integration gap
+
+The full-board layer contains two generations:
+
+1. an RF-based architectural prototype; and
+2. a joint-state particle direction intended to replace independent node
+   propagation.
+
+Neither is connected end to end to the latest exact-first large-graph router.
+The intended development sequence is:
+
+```text
+validate large-graph hybrid generator
+        ↓
+define tied-policy target semantics
+        ↓
+rebuild joint-state surrogate
+        ↓
+integrate multi-turn particle rollout
+```
+
+The optional `demo/visualization/SimulationRenderGT.py` only renders compatible
+states; it is not part of the transition or strategy logic.
+
+---
+
+## 8. Strategic evaluation
+
+Strategic evaluation consumes terminal or horizon states produced by compatible
+upstream routes.
+
+### 8.1 Terminal utility
+
+`utility_terminal.py` provides reusable global outcome scoring. Its architectural
+role is independent of transition generation: a compatible state may come from
+an exact solve, regional approximation, learned transition or multi-turn
+rollout.
+
+This boundary keeps prediction and evaluation separate.
+
+### 8.2 Commitment profiles and payoff tables
+
+`game_theory_commitment.py` enumerates higher-level commitment profiles and
+invokes the GT rollout to construct payoffs:
+
+```text
+commitment profile
+        ↓
+full-board rollout
+        ↓
+terminal or horizon state
+        ↓
+utility_terminal.py
+        ↓
+profile payoff table
+```
+
+The module compares the strategic consequences of commitment combinations. It
+does not currently compute or select a Nash equilibrium and does not replace the
+tactical policy optimization performed by lower layers.
+
+---
+
+## 9. Cross-layer validation architecture
+
+Validation is organized by model boundary rather than treated as one final
+system test. Correctness within one layer does not guarantee that its output is
+sufficient for the next.
+
+### 9.1 Combat kernel
+
+Tests check probability tables, terminal outcomes and normalization.
+
+### 9.2 Exact finite solver
+
+The compact solver is compared with the older semantic/reference recursion for
+values, policies and successor distributions.
+
+### 9.3 Policy identity
+
+`exact_policy_dag.py` and related experiments test whether tied policy choices
+retain value while changing labelled successor distributions.
+
+### 9.4 Library construction and lookup
+
+Small isolated libraries are built and checked for row coverage, schema
+consistency, probability mass and agreement with direct exact calculation.
+
+Relevant components include:
+
+- `validate_exact_finite_library_builder.py`;
+- `check_exact_finite_library_contents.py`; and
+- `verify_state_set_cap7_full_library.py`.
+
+### 9.5 Regional decomposition
+
+`regional_compounding_validation.py` and
+`regional_compounding_validation_v2.py` compare library-backed regional
+approximations with full exact reference distributions.
+
+These tests revealed the difference between weakly coupled bridge cases and
+strongly coupled double-front cases, motivating the exact-first hybrid route.
+
+### 9.6 Training pipeline
+
+`preflight_checks_training.py` verifies library coverage and selected artifacts
+before expensive data generation or training.
+
+Future learned-transition evaluation should use grouped scenario-level splits,
+complete successor-distribution metrics and multi-turn error propagation, not
+only marginal node accuracy.
+
+The core validation principle is:
+
+> **An exact component can still participate in an invalid higher-level
+> representation.**
+
+An exact regional policy does not validate decomposition; a predictive model
+that accurately reproduces labels does not validate the process that generated
+those labels.
+
+---
+
+## 10. Current implementation status and module map
+
+| Layer | Principal modules | Role and status |
 |---|---|---|
-| Original game simulation | `Board.py`, `Players.py`, `SimulationFunctions.py`, `SimulationEngine.py` | Mutable explicit game platform, parallel to the mathematical rollout. |
-| Mathematical full-board model | `full_board_state_generators.py`, `full_board_simulation_GT.py`, `full_board_simulation_ML.py`, `strategy_policy_gt.py` | Experimental complete-board resource allocation and alternating-player rollout. |
-| Combat probability | `markov_matrix_probabilities.py` | Supplies whole-battle stochastic transition distributions. |
-| Graph semantics / reference solving | `small_graph_outcome_probabilities.py` | Defines local states, actions, terminal conditions, utilities, canonicalization and reference solver behaviour. |
-| Compact exact solving | `exact_finite_solver.py` | Efficient finite-state dynamic programming for canonical graph topologies. |
-| Policy structure | `exact_policy_dag.py` | Exposes exact tied policy structure and distributional differences. |
-| Library generation | `create_library.py` | Enumerates canonical graphs/states and creates exact policy libraries. |
-| Library data boundary | `library_io.py` | Loads indexed chunks and normalizes policy-distribution payloads. |
-| Board-to-library adaptation | `approximate_graph_outcome_probabilities.py` | Extracts regions, canonicalizes them, selects library coverage and maps local results back to global nodes. |
-| Large-graph decision layer | `battle_graph_ranking.py` | Constructs and ranks region/policy combinations and performs downstream evaluation. |
-| Data generation | `generate_data_ML.py` | Converts simulation/strategy results into supervised transition data. |
-| Historical node ML | `train_ML.py`, `predict_future_states_ML.py` | Learns node-level successor approximations from generated states. |
-| Joint-state ML model | `transition_distribution_ML.py` | Experimental KNN inference over complete successor signatures. |
-| Joint-state target infrastructure | `transition_distribution_stage_a_v2.py`, `transition_distribution_stage_a_v3.py` | One-transition dataset construction and sampling calibration, not inference. |
-| Strategic evaluation | `utility_terminal.py`, `game_theory_commitment.py` | Scores outcomes and constructs commitment-profile payoff tables; does not compute Nash equilibrium. |
-| Regional scientific validation | `regional_compounding_validation.py`, `regional_compounding_validation_v2.py` | Measures approximation error against full exact solutions. |
-| Library validation | `validate_exact_finite_library_builder.py`, `check_exact_finite_library_contents.py`, `verify_state_set_cap7_full_library.py` | Checks exact agreement, schema integrity and production library coverage. |
+| Original explicit simulator | `Board.py`, `Players.py`, `SimulationFunctions.py`, `SimulationEngine.py` | Mutable historical game platform; separate from mathematical rollout. |
+| Combat probability | `markov_matrix_probabilities.py` | Mature whole-battle stochastic transition kernel. |
+| Small-graph semantics | `small_graph_outcome_probabilities.py` | Defines local states, actions, terminal conditions, utilities and reference behaviour. |
+| Compact exact solving | `exact_finite_solver.py` | Mature finite-state dynamic programming for canonical topologies. |
+| Policy structure | `exact_policy_dag.py` | Validation and research representation of tied optimal policy structure. |
+| Library generation | `create_library.py` | Offline enumeration and construction of exact policy artifacts. |
+| Library data boundary | `library_io.py` | Indexed chunk lookup and policy-payload normalization at runtime. |
+| Board/region adaptation | `approximate_graph_outcome_probabilities.py` | Extracts supported regions, normalizes roles, selects library coverage and maps outcomes. |
+| Large-graph ranking | `battle_graph_ranking.py` | Ranks partition-policy combinations and performs second-wave evaluation. |
+| Large-graph hybrid router | Conceptual composition of exact solver, coupled regions, regional composition and bounded approximation | Validation-supported target; not fully integrated. |
+| Transition data generation | `generate_data_ML.py` | Produces supervised targets from the strategy pipeline. |
+| Historical node ML | `train_ML.py`, `predict_future_states_ML.py` | Learned node marginals from historical generated states. |
+| Joint-state ML | `transition_distribution_ML.py` | Experimental KNN inference over complete successor signatures. |
+| Joint-state target infrastructure | `transition_distribution_stage_a_v2.py`, `transition_distribution_stage_a_v3.py` | Constructs and calibrates one-transition targets; not inference. |
+| Mathematical full-board model | `full_board_state_generators.py`, `full_board_simulation_GT.py`, `full_board_simulation_ML.py`, `strategy_policy_gt.py` | Historical RF rollout and experimental particle route. |
+| Strategic evaluation | `utility_terminal.py`, `game_theory_commitment.py` | Terminal scoring and commitment payoff construction; no equilibrium solver. |
+| Regional validation | `regional_compounding_validation.py`, `regional_compounding_validation_v2.py` | Measures decomposition error against full exact references. |
 | Distribution metrics | `distribution_comparison_metrics.py` | Measures distributional agreement, including total variation. |
-| Training preflight | `preflight_checks_training.py` | Checks library and pipeline readiness before expensive data generation. |
+| Training preflight | `preflight_checks_training.py` | Checks coverage and artifacts before expensive target generation. |
 
-The table is not intended to imply that every historical component is active in
-one current runtime.
-
-It shows how the major pieces developed for different stages of the modelling
-problem relate to the system as a whole.
+The table maps source modules to architectural responsibilities. It does not
+imply that every historical and experimental component is active in one
+runtime.
 
 ---
 
-## 22. Public repository boundary
+## 11. Public repository boundary
 
-The public portfolio repository contains reusable source for the documented
-research layers under `src/project_risk/`, while keeping the compact executable
-example separate.
+The public repository contains reusable source for the documented research
+layers under `src/project_risk/`.
 
-Its runnable exact example demonstrates:
+The compact runnable example under `examples/run_exact_example.py` imports the
+actual research implementation and demonstrates:
 
 ```text
 combat kernel
     ↓
-small graph state
+small-graph state
     ↓
 exact finite solver
     ↓
-policy / policy ties
+optimal and tied policies
     ↓
-terminal successor distribution
+joint terminal successor distribution
 ```
 
-The demo deliberately does not require generated multi-gigabyte policy
-libraries, full-board rollouts, regional queries or trained ML models. The
-research source for those layers is inspectable, but artifact-dependent paths
-raise or report missing inputs only when invoked.
+The example deliberately does not require generated multi-gigabyte policy
+libraries, trained models, full-board rollouts or historical data products.
+Artifact-dependent research paths are inspectable but require their external
+inputs only when invoked.
 
-The public example is therefore best interpreted as a **reproducible window into
-the mathematical core**, not as the complete public implementation.
+The source and demo have different responsibilities:
 
-The broader architecture described in this document represents Project Risk as
-a research system.
+> `src/project_risk/` contains the reusable research implementation; the demo is
+> a small orchestration layer that runs one exact component from a clean
+> checkout.
 
-The distinction is intentional:
-
-> `src/project_risk/` contains the reusable research implementation;
-> the demo shows that one important exact component can be run from a clean checkout.
+The broader architecture described here represents the complete research
+system, including implemented, historical and explicitly experimental layers.
