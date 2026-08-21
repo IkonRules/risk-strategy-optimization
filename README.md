@@ -67,7 +67,7 @@ the game between players, but it is not the turn engine used by the later
 mathematical `GlobalState` pipeline. No completed adapter currently installs
 the advanced mathematical strategy as a player policy in `SimulationEngine`.
 
-### Mathematical strategy pipeline
+### Mathematical strategy pipeline - The optimization project
 
 The later modelling system is organized by the scale and responsibility of each
 layer:
@@ -87,7 +87,7 @@ layer:
 | **Strategic evaluation** | Score resulting states and compare higher-level strategic commitments | Partially implemented |
 
 For the full conceptual account, see
-[`docs/MODELLING_APPROACH.md`](docs/MODELLING_APPROACH.md). For module-level
+[`docs/modelling_approach.md`](docs/modelling_approach.md). For module-level
 design, see [`docs/architecture.md`](docs/architecture.md).
 
 ---
@@ -389,7 +389,7 @@ together with predicted outcomes from the continent model in order to associate
 the macro states with specific outcomes on the board.
 
 Although this approach proved to be problematic in many ways (see
-[`docs/MODELLING_APPROACH.md`](docs/MODELLING_APPROACH.md)), 
+[`docs/modelling_approach.md`](docs/modelling_approach.md)), 
 the concept of associating strategic descriptors with outcomes was kept 
 and further elaborated. 
 
@@ -397,7 +397,7 @@ and further elaborated.
 
 The RF models predicted ownership and troop outcomes for individual
 nodes. Models achieved strong metrics relative to their generated
-labels, including capture ROC-AUC values around $0.985$–$0.995$.
+labels, including capture ROC-AUC values around $0.985$ – $0.995$.
 
 The larger limitation was target validity. The labels inherited older local
 utility functions, plateau-based high-troop policies, unvalidated regional
@@ -528,15 +528,12 @@ Project Risk model.
 
 ## Repository guide
 
-- [`docs/MODELLING_APPROACH.md`](docs/MODELLING_APPROACH.md) — conceptual
+- [`docs/modelling_approach.md`](docs/modelling_approach.md) — conceptual
   account organized by the current modelling pipeline.
 - [`docs/architecture.md`](docs/architecture.md) — technical architecture of
   the same pipeline and the separate original simulator.
 - [`docs/validation.md`](docs/validation.md) — validation results, evidence
   classes, conditions and caveats.
-- [`docs/MODEL_DEVELOPMENT_HISTORY.md`](docs/MODEL_DEVELOPMENT_HISTORY.md) —
-  chronological development history. Unlike the pipeline documents, it follows
-  when components and modelling ideas were developed.
 - [`src/project_risk/`](src/project_risk/) — reusable research source.
 - [`examples/`](examples/) and [`demo/`](demo/) — runnable example and optional
   presentation material.

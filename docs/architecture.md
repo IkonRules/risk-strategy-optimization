@@ -5,7 +5,7 @@ on graphs. The reusable research implementation is published under
 `src/project_risk/`.
 
 This document is the technical counterpart to
-[`MODELLING_APPROACH.md`](MODELLING_APPROACH.md). It follows the same modelling
+[`modelling_approach.md`](modelling_approach.md). It follows the same modelling
 pipeline:
 
 ```text
@@ -435,9 +435,7 @@ For probabilities $p = (p_1, \ldots, p_k)$, expected derived values can be
 calculated directly, for example
 
 $$
-E[\text{new territories}]
-=
-\sum_i p_i n_i.
+E[\text{new territories}] = \sum_i p_i n_i.
 $$
 
 Multiple tied policies can be stored under one initial state while each remains

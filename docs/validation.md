@@ -3,8 +3,8 @@
 This document is the evidence ledger for the public portfolio. It states what
 can be rerun from a clean checkout, what is supported by retained historical
 reports, and how the reported numbers should be interpreted. The model
-concepts are explained in [Modelling Approach](MODELLING_APPROACH.md); module
-boundaries are documented in [Architecture and status](architecture.md).
+concepts are explained in [modelling_approach](modelling_approach.md); module
+boundaries are documented in [architecture](architecture.md).
 
 ## Evidence classes
 
